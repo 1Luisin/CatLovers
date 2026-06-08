@@ -1,10 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -12,14 +14,29 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
 } from "react-native";
 
 type Category = "Filme" | "Serie" | "Jogo" | "Plano";
-type Tab = "inicio" | "colecao" | "planos" | "nos";
+type Tab = "inicio" | "colecao" | "planos" | "perfil";
 type Filter = "Todos" | Category;
+type ThemeName = "Romance" | "Lavanda" | "Floresta" | "Noite";
+
+type Profile = {
+  id: "leticia" | "luis";
+  name: string;
+  birthDate: string;
+  bio: string;
+  photoUri?: string;
+  color: string;
+  theme: ThemeName;
+  notifications: boolean;
+  privateProfile: boolean;
+  weeklyQuestion: boolean;
+};
 
 type CoupleItem = {
   id: string;
@@ -33,6 +50,7 @@ type CoupleItem = {
 };
 
 const STORAGE_KEY = "@catlovers/items";
+const PROFILES_KEY = "@catlovers/profiles";
 
 const palette = {
   ink: "#29242B",
@@ -46,6 +64,61 @@ const palette = {
   apricot: "#EBA56E",
   line: "#EDE4DE",
 };
+
+const themes: Record<
+  ThemeName,
+  { accent: string; accentSoft: string; background: string; label: string }
+> = {
+  Romance: {
+    accent: "#C65D6C",
+    accentSoft: "#F9E9E8",
+    background: "#FCF8F4",
+    label: "Romance",
+  },
+  Lavanda: {
+    accent: "#8B6FAE",
+    accentSoft: "#F0EAF6",
+    background: "#FAF8FC",
+    label: "Lavanda",
+  },
+  Floresta: {
+    accent: "#527B68",
+    accentSoft: "#E7F0EB",
+    background: "#F7FAF8",
+    label: "Floresta",
+  },
+  Noite: {
+    accent: "#655D9A",
+    accentSoft: "#EAE8F4",
+    background: "#F6F5FA",
+    label: "Noite",
+  },
+};
+
+const initialProfiles: Profile[] = [
+  {
+    id: "leticia",
+    name: "Leticia",
+    birthDate: "18/09/2003",
+    bio: "Apaixonada por historias, cafe e pelos nossos domingos sem pressa.",
+    color: "#E9A29D",
+    theme: "Romance",
+    notifications: true,
+    privateProfile: true,
+    weeklyQuestion: true,
+  },
+  {
+    id: "luis",
+    name: "Luis",
+    birthDate: "03/05/2001",
+    bio: "Jogos cooperativos, filmes longos e qualquer plano que seja a dois.",
+    color: "#9B8BC1",
+    theme: "Lavanda",
+    notifications: true,
+    privateProfile: true,
+    weeklyQuestion: false,
+  },
+];
 
 const initialItems: CoupleItem[] = [
   {
@@ -126,8 +199,100 @@ const tabs: Array<{
     icon: "calendar-outline",
     activeIcon: "calendar",
   },
-  { key: "nos", label: "Nos", icon: "heart-outline", activeIcon: "heart" },
+  {
+    key: "perfil",
+    label: "Perfil",
+    icon: "person-outline",
+    activeIcon: "person",
+  },
 ];
+
+function ProfileAvatar({
+  profile,
+  size = 72,
+  border = false,
+}: {
+  profile: Profile;
+  size?: number;
+  border?: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.profileAvatar,
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: profile.color,
+          borderWidth: border ? 4 : 0,
+        },
+      ]}
+    >
+      {profile.photoUri ? (
+        <Image source={{ uri: profile.photoUri }} style={styles.avatarImage} />
+      ) : (
+        <Text style={[styles.profileInitial, { fontSize: size * 0.34 }]}>
+          {profile.name.charAt(0).toUpperCase()}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function ProfileGate({
+  profiles,
+  onSelect,
+}: {
+  profiles: Profile[];
+  onSelect: (id: Profile["id"]) => void;
+}) {
+  return (
+    <LinearGradient
+      colors={["#FCF8F4", "#F3E8F0"]}
+      style={styles.gateContainer}
+    >
+      <View style={styles.gateBrand}>
+        <View style={styles.gateLogo}>
+          <Ionicons name="heart" size={25} color={palette.paper} />
+        </View>
+        <Text style={styles.gateBrandName}>CatLovers</Text>
+        <Text style={styles.gateBrandTag}>NOSSO CANTINHO</Text>
+      </View>
+
+      <View style={styles.gateContent}>
+        <Text style={styles.gateTitle}>Quem esta entrando?</Text>
+        <Text style={styles.gateSubtitle}>
+          Escolha seu perfil. Aqui nao tem senha, so o nosso espaco compartilhado.
+        </Text>
+        <View style={styles.profileChoices}>
+          {profiles.map((profile) => (
+            <Pressable
+              key={profile.id}
+              onPress={() => onSelect(profile.id)}
+              style={({ pressed }) => [
+                styles.profileChoice,
+                pressed && styles.pressed,
+              ]}
+            >
+              <ProfileAvatar profile={profile} size={92} border />
+              <Text style={styles.profileChoiceName}>{profile.name}</Text>
+              <View style={styles.enterProfile}>
+                <Text style={styles.enterProfileText}>Entrar</Text>
+                <Ionicons name="arrow-forward" size={14} color={palette.rose} />
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.gatePrivacy}>
+        <Ionicons name="lock-closed-outline" size={14} color={palette.muted} />
+        <Text style={styles.gatePrivacyText}>Perfis salvos somente neste aparelho</Text>
+      </View>
+    </LinearGradient>
+  );
+}
 
 function AppHeader({
   eyebrow,
@@ -221,10 +386,12 @@ function MemoryCard({
 
 function HomeScreen({
   items,
+  profile,
   onAdd,
   onToggle,
 }: {
   items: CoupleItem[];
+  profile: Profile;
   onAdd: () => void;
   onToggle: (id: string) => void;
 }) {
@@ -236,7 +403,11 @@ function HomeScreen({
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      <AppHeader eyebrow="SEGUNDA, 8 DE JUNHO" title="Oi, Bia & Leo" onAdd={onAdd} />
+      <AppHeader
+        eyebrow="SEGUNDA, 8 DE JUNHO"
+        title={`Oi, ${profile.name}`}
+        onAdd={onAdd}
+      />
 
       <LinearGradient
         colors={["#D36A76", "#A77BC0"]}
@@ -254,7 +425,7 @@ function HomeScreen({
         <View style={styles.heroFooter}>
           <View style={styles.avatarStack}>
             <View style={[styles.avatar, { backgroundColor: "#F6C7A8" }]}>
-              <Text style={styles.avatarText}>B</Text>
+              <Text style={styles.avatarText}>LE</Text>
             </View>
             <View
               style={[
@@ -263,7 +434,7 @@ function HomeScreen({
                 { backgroundColor: "#C5B5DD" },
               ]}
             >
-              <Text style={styles.avatarText}>L</Text>
+              <Text style={styles.avatarText}>LU</Text>
             </View>
           </View>
           <View style={styles.heroDate}>
@@ -441,66 +612,349 @@ function PlansScreen({
   );
 }
 
-function UsScreen({ items, onAdd }: { items: CoupleItem[]; onAdd: () => void }) {
-  const completed = items.filter((item) => item.done);
+function SettingSwitch({
+  icon,
+  label,
+  description,
+  value,
+  accent,
+  onChange,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  description: string;
+  value: boolean;
+  accent: string;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <View style={styles.settingRow}>
+      <View style={[styles.settingIcon, { backgroundColor: `${accent}16` }]}>
+        <Ionicons name={icon} size={19} color={accent} />
+      </View>
+      <View style={styles.settingText}>
+        <Text style={styles.settingLabel}>{label}</Text>
+        <Text style={styles.settingDescription}>{description}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ false: "#DDD4D8", true: `${accent}75` }}
+        thumbColor={value ? accent : "#F7F4F5"}
+      />
+    </View>
+  );
+}
+
+function ProfileScreen({
+  profile,
+  items,
+  accent,
+  onEdit,
+  onUpdate,
+  onSwitchProfile,
+}: {
+  profile: Profile;
+  items: CoupleItem[];
+  accent: string;
+  onEdit: () => void;
+  onUpdate: (profile: Profile) => void;
+  onSwitchProfile: () => void;
+}) {
+  const [aboutVisible, setAboutVisible] = useState(false);
+  const completed = items.filter((item) => item.done).length;
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <AppHeader eyebrow="DESDE 14.02.2022" title="Bia & Leo" onAdd={onAdd} />
-      <View style={styles.coupleCard}>
-        <View style={styles.largeAvatars}>
-          <View style={[styles.largeAvatar, { backgroundColor: "#F1B694" }]}>
-            <Text style={styles.largeAvatarText}>B</Text>
-          </View>
-          <View style={styles.heartConnector}>
-            <Ionicons name="heart" size={18} color={palette.paper} />
-          </View>
-          <View style={[styles.largeAvatar, { backgroundColor: "#A994C6" }]}>
-            <Text style={styles.largeAvatarText}>L</Text>
-          </View>
+      <View style={styles.header}>
+        <View>
+          <Text style={[styles.eyebrow, { color: accent }]}>MINHA CONTA</Text>
+          <Text style={styles.pageTitle}>Perfil</Text>
         </View>
-        <Text style={styles.coupleQuote}>
-          "Colecionando dias comuns que viram historias favoritas."
-        </Text>
-      </View>
-
-      <View style={styles.achievementGrid}>
-        <View style={styles.achievement}>
-          <Text style={styles.achievementValue}>{completed.length}</Text>
-          <Text style={styles.achievementLabel}>memorias</Text>
-        </View>
-        <View style={styles.achievement}>
-          <Text style={styles.achievementValue}>4</Text>
-          <Text style={styles.achievementLabel}>anos juntos</Text>
-        </View>
-        <View style={styles.achievement}>
-          <Text style={styles.achievementValue}>12</Text>
-          <Text style={styles.achievementLabel}>meses ativos</Text>
-        </View>
-      </View>
-
-      <Text style={[styles.sectionTitle, { marginTop: 26, marginBottom: 14 }]}>
-        Nosso jeito
-      </Text>
-      {[
-        ["Nossa trilha sonora", "Musical-notes-outline", "18 musicas"],
-        ["Lista de desejos", "gift-outline", "7 ideias"],
-        ["Pergunta da semana", "chatbubble-ellipses-outline", "Responder juntos"],
-      ].map(([label, icon, detail]) => (
-        <Pressable key={label} style={styles.menuRow}>
-          <View style={styles.menuIcon}>
-            <Ionicons
-              name={icon.toLowerCase() as keyof typeof Ionicons.glyphMap}
-              size={20}
-              color={palette.rose}
-            />
-          </View>
-          <Text style={styles.menuLabel}>{label}</Text>
-          <Text style={styles.menuDetail}>{detail}</Text>
-          <Ionicons name="chevron-forward" size={17} color="#B8ADB3" />
+        <Pressable onPress={onEdit} style={styles.editProfileButton}>
+          <Ionicons name="pencil-outline" size={19} color={accent} />
         </Pressable>
-      ))}
+      </View>
+
+      <View style={styles.profileHero}>
+        <View>
+          <ProfileAvatar profile={profile} size={104} border />
+          <Pressable
+            onPress={onEdit}
+            style={[styles.photoBadge, { backgroundColor: accent }]}
+          >
+            <Ionicons name="camera" size={16} color={palette.paper} />
+          </Pressable>
+        </View>
+        <Text style={styles.profileName}>{profile.name}</Text>
+        <Text style={styles.profileBirth}>
+          <Ionicons name="gift-outline" size={12} color={palette.muted} />{" "}
+          {profile.birthDate}
+        </Text>
+        <Text style={styles.profileBio}>{profile.bio}</Text>
+        <Pressable
+          onPress={onEdit}
+          style={[styles.outlineProfileButton, { borderColor: `${accent}55` }]}
+        >
+          <Text style={[styles.outlineProfileButtonText, { color: accent }]}>
+            Editar perfil
+          </Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.profileStats}>
+        <View style={styles.profileStat}>
+          <Text style={styles.profileStatValue}>{completed}</Text>
+          <Text style={styles.profileStatLabel}>memorias</Text>
+        </View>
+        <View style={styles.profileStatDivider} />
+        <View style={styles.profileStat}>
+          <Text style={styles.profileStatValue}>
+            {items.filter((item) => !item.done).length}
+          </Text>
+          <Text style={styles.profileStatLabel}>planos</Text>
+        </View>
+        <View style={styles.profileStatDivider} />
+        <View style={styles.profileStat}>
+          <Text style={styles.profileStatValue}>4</Text>
+          <Text style={styles.profileStatLabel}>anos juntos</Text>
+        </View>
+      </View>
+
+      <Text style={styles.settingsSectionTitle}>Aparencia</Text>
+      <View style={styles.settingsCard}>
+        <Text style={styles.themeHint}>Tema do aplicativo</Text>
+        <View style={styles.themeOptions}>
+          {(Object.keys(themes) as ThemeName[]).map((themeName) => {
+            const theme = themes[themeName];
+            const active = profile.theme === themeName;
+            return (
+              <Pressable
+                key={themeName}
+                onPress={() => onUpdate({ ...profile, theme: themeName })}
+                style={styles.themeOption}
+              >
+                <View
+                  style={[
+                    styles.themeSwatch,
+                    { backgroundColor: theme.accent },
+                    active && styles.themeSwatchActive,
+                  ]}
+                >
+                  {active && (
+                    <Ionicons name="checkmark" size={17} color={palette.paper} />
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.themeName,
+                    active && { color: theme.accent, fontWeight: "800" },
+                  ]}
+                >
+                  {theme.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      <Text style={styles.settingsSectionTitle}>Preferencias</Text>
+      <View style={styles.settingsCard}>
+        <SettingSwitch
+          icon="notifications-outline"
+          label="Lembretes do casal"
+          description="Planos proximos e datas especiais"
+          value={profile.notifications}
+          accent={accent}
+          onChange={(notifications) => onUpdate({ ...profile, notifications })}
+        />
+        <View style={styles.settingDivider} />
+        <SettingSwitch
+          icon="chatbubbles-outline"
+          label="Pergunta da semana"
+          description="Uma pergunta nova para responder juntos"
+          value={profile.weeklyQuestion}
+          accent={accent}
+          onChange={(weeklyQuestion) => onUpdate({ ...profile, weeklyQuestion })}
+        />
+        <View style={styles.settingDivider} />
+        <SettingSwitch
+          icon="shield-checkmark-outline"
+          label="Perfil privado"
+          description="Dados ficam somente neste aparelho"
+          value={profile.privateProfile}
+          accent={accent}
+          onChange={(privateProfile) => onUpdate({ ...profile, privateProfile })}
+        />
+      </View>
+
+      <Text style={styles.settingsSectionTitle}>CatLovers</Text>
+      <View style={styles.settingsCard}>
+        <Pressable
+          onPress={() => setAboutVisible(!aboutVisible)}
+          style={styles.actionSettingRow}
+        >
+          <View style={[styles.settingIcon, { backgroundColor: `${accent}16` }]}>
+            <Ionicons name="heart-circle-outline" size={20} color={accent} />
+          </View>
+          <View style={styles.settingText}>
+            <Text style={styles.settingLabel}>Sobre o aplicativo</Text>
+            <Text style={styles.settingDescription}>Versao 1.1.0</Text>
+          </View>
+          <Ionicons
+            name={aboutVisible ? "chevron-up" : "chevron-forward"}
+            size={18}
+            color="#B3A9AE"
+          />
+        </Pressable>
+        {aboutVisible && (
+          <View style={styles.aboutBox}>
+            <Text style={styles.aboutText}>
+              CatLovers e o cantinho de Leticia e Luis para guardar historias,
+              escolher o proximo filme e transformar planos simples em memoria.
+            </Text>
+            <Text style={[styles.aboutSignature, { color: accent }]}>
+              Feito com carinho para dois.
+            </Text>
+          </View>
+        )}
+        <View style={styles.settingDivider} />
+        <Pressable
+          onPress={() =>
+            Alert.alert(
+              "Seus dados",
+              "Perfis, preferencias e registros sao armazenados localmente neste aparelho.",
+            )
+          }
+          style={styles.actionSettingRow}
+        >
+          <View style={[styles.settingIcon, { backgroundColor: `${accent}16` }]}>
+            <Ionicons name="document-text-outline" size={19} color={accent} />
+          </View>
+          <Text style={styles.menuLabel}>Privacidade e dados</Text>
+          <Ionicons name="chevron-forward" size={18} color="#B3A9AE" />
+        </Pressable>
+      </View>
+
+      <Pressable onPress={onSwitchProfile} style={styles.switchProfileButton}>
+        <Ionicons name="swap-horizontal-outline" size={19} color={palette.rose} />
+        <Text style={styles.switchProfileText}>Trocar de perfil</Text>
+      </Pressable>
     </ScrollView>
+  );
+}
+
+function EditProfileModal({
+  visible,
+  profile,
+  accent,
+  onClose,
+  onSave,
+}: {
+  visible: boolean;
+  profile: Profile;
+  accent: string;
+  onClose: () => void;
+  onSave: (profile: Profile) => void;
+}) {
+  const [draft, setDraft] = useState(profile);
+
+  useEffect(() => {
+    if (visible) setDraft(profile);
+  }, [profile, visible]);
+
+  const choosePhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Permissao necessaria",
+        "Permita o acesso as fotos para escolher uma imagem de perfil.",
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setDraft((current) => ({
+        ...current,
+        photoUri: result.assets[0].uri,
+      }));
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={styles.editModalPage}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.editModalPage}
+        >
+          <View style={styles.fullModalHeader}>
+            <Pressable onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={22} color={palette.ink} />
+            </Pressable>
+            <Text style={styles.fullModalTitle}>Editar perfil</Text>
+            <Pressable
+              onPress={() => {
+                if (!draft.name.trim()) {
+                  Alert.alert("Nome obrigatorio", "Informe o nome do perfil.");
+                  return;
+                }
+                onSave({ ...draft, name: draft.name.trim() });
+              }}
+            >
+              <Text style={[styles.fullModalSave, { color: accent }]}>Salvar</Text>
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={styles.editProfileContent}>
+            <Pressable onPress={choosePhoto} style={styles.editPhotoArea}>
+              <ProfileAvatar profile={draft} size={112} border />
+              <View style={[styles.editPhotoBadge, { backgroundColor: accent }]}>
+                <Ionicons name="camera" size={18} color={palette.paper} />
+              </View>
+              <Text style={[styles.changePhotoText, { color: accent }]}>
+                Alterar foto
+              </Text>
+            </Pressable>
+
+            <Text style={styles.inputLabel}>Nome</Text>
+            <TextInput
+              value={draft.name}
+              onChangeText={(name) => setDraft({ ...draft, name })}
+              style={styles.input}
+              placeholder="Seu nome"
+              placeholderTextColor="#AFA4AA"
+            />
+            <Text style={styles.inputLabel}>Data de nascimento</Text>
+            <TextInput
+              value={draft.birthDate}
+              onChangeText={(birthDate) => setDraft({ ...draft, birthDate })}
+              style={styles.input}
+              placeholder="DD/MM/AAAA"
+              placeholderTextColor="#AFA4AA"
+              keyboardType="numbers-and-punctuation"
+              maxLength={10}
+            />
+            <Text style={styles.inputLabel}>Bio</Text>
+            <TextInput
+              value={draft.bio}
+              onChangeText={(bio) => setDraft({ ...draft, bio })}
+              style={[styles.input, styles.profileBioInput]}
+              placeholder="Conte um pouco sobre voce"
+              placeholderTextColor="#AFA4AA"
+              multiline
+              maxLength={180}
+            />
+            <Text style={styles.characterCount}>{draft.bio.length}/180</Text>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </Modal>
   );
 }
 
@@ -628,13 +1082,22 @@ function AddModal({
 export default function App() {
   const [tab, setTab] = useState<Tab>("inicio");
   const [items, setItems] = useState<CoupleItem[]>(initialItems);
+  const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
+  const [activeProfileId, setActiveProfileId] = useState<Profile["id"] | null>(
+    null,
+  );
   const [modalVisible, setModalVisible] = useState(false);
+  const [editProfileVisible, setEditProfileVisible] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((stored) => {
-        if (stored) setItems(JSON.parse(stored));
+    Promise.all([
+      AsyncStorage.getItem(STORAGE_KEY),
+      AsyncStorage.getItem(PROFILES_KEY),
+    ])
+      .then(([storedItems, storedProfiles]) => {
+        if (storedItems) setItems(JSON.parse(storedItems));
+        if (storedProfiles) setProfiles(JSON.parse(storedProfiles));
       })
       .catch(() => undefined)
       .finally(() => setLoaded(true));
@@ -644,9 +1107,20 @@ export default function App() {
     if (loaded) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items, loaded]);
 
+  useEffect(() => {
+    if (loaded) AsyncStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+  }, [loaded, profiles]);
+
+  const activeProfile = profiles.find(
+    (profile) => profile.id === activeProfileId,
+  );
+  const activeTheme = themes[activeProfile?.theme ?? "Romance"];
+
   const screen = useMemo(() => {
+    if (!activeProfile) return null;
     const props = {
       items,
+      profile: activeProfile,
       onAdd: () => setModalVisible(true),
       onToggle: (id: string) =>
         setItems((current) =>
@@ -657,14 +1131,57 @@ export default function App() {
     };
     if (tab === "colecao") return <CollectionScreen {...props} />;
     if (tab === "planos") return <PlansScreen {...props} />;
-    if (tab === "nos") return <UsScreen items={items} onAdd={props.onAdd} />;
+    if (tab === "perfil")
+      return (
+        <ProfileScreen
+          profile={activeProfile}
+          items={items}
+          accent={activeTheme.accent}
+          onEdit={() => setEditProfileVisible(true)}
+          onUpdate={(updated) =>
+            setProfiles((current) =>
+              current.map((profile) =>
+                profile.id === updated.id ? updated : profile,
+              ),
+            )
+          }
+          onSwitchProfile={() => {
+            setTab("inicio");
+            setActiveProfileId(null);
+          }}
+        />
+      );
     return <HomeScreen {...props} />;
-  }, [items, tab]);
+  }, [activeProfile, activeTheme.accent, items, tab]);
+
+  if (!loaded) {
+    return (
+      <View style={styles.loadingScreen}>
+        <View style={styles.gateLogo}>
+          <Ionicons name="heart" size={25} color={palette.paper} />
+        </View>
+        <Text style={styles.loadingText}>CatLovers</Text>
+      </View>
+    );
+  }
+
+  if (!activeProfile) {
+    return (
+      <SafeAreaView style={styles.gateSafeArea}>
+        <StatusBar style="dark" />
+        <ProfileGate profiles={profiles} onSelect={setActiveProfileId} />
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: activeTheme.background }]}
+    >
       <StatusBar style="dark" />
-      <View style={styles.appShell}>
+      <View
+        style={[styles.appShell, { backgroundColor: activeTheme.background }]}
+      >
         {screen}
         <View style={styles.tabBar}>
           {tabs.map((item) => {
@@ -678,9 +1195,14 @@ export default function App() {
                 <Ionicons
                   name={active ? item.activeIcon : item.icon}
                   size={22}
-                  color={active ? palette.rose : "#9C9298"}
+                  color={active ? activeTheme.accent : "#9C9298"}
                 />
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>
+                <Text
+                  style={[
+                    styles.tabText,
+                    active && { color: activeTheme.accent },
+                  ]}
+                >
                   {item.label}
                 </Text>
               </Pressable>
@@ -694,6 +1216,20 @@ export default function App() {
         onSave={(item) => {
           setItems((current) => [item, ...current]);
           setModalVisible(false);
+        }}
+      />
+      <EditProfileModal
+        visible={editProfileVisible}
+        profile={activeProfile}
+        accent={activeTheme.accent}
+        onClose={() => setEditProfileVisible(false)}
+        onSave={(updated) => {
+          setProfiles((current) =>
+            current.map((profile) =>
+              profile.id === updated.id ? updated : profile,
+            ),
+          );
+          setEditProfileVisible(false);
         }}
       />
     </SafeAreaView>
@@ -1195,4 +1731,298 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveButtonText: { color: palette.paper, fontSize: 13, fontWeight: "800" },
+  gateSafeArea: { flex: 1, backgroundColor: palette.cream },
+  gateContainer: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 520,
+    alignSelf: "center",
+    paddingHorizontal: 22,
+    paddingVertical: 28,
+  },
+  gateBrand: { alignItems: "center", marginTop: 18 },
+  gateLogo: {
+    width: 54,
+    height: 54,
+    borderRadius: 19,
+    backgroundColor: palette.rose,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: palette.rose,
+    shadowOpacity: 0.25,
+    shadowRadius: 13,
+    shadowOffset: { width: 0, height: 7 },
+  },
+  gateBrandName: {
+    color: palette.ink,
+    fontSize: 24,
+    letterSpacing: -0.5,
+    fontWeight: "900",
+    marginTop: 11,
+  },
+  gateBrandTag: {
+    color: palette.rose,
+    fontSize: 8,
+    fontWeight: "800",
+    letterSpacing: 2.2,
+    marginTop: 3,
+  },
+  gateContent: { flex: 1, justifyContent: "center" },
+  gateTitle: {
+    color: palette.ink,
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.6,
+    textAlign: "center",
+  },
+  gateSubtitle: {
+    color: palette.muted,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
+    alignSelf: "center",
+    maxWidth: 330,
+    marginTop: 9,
+  },
+  profileChoices: { flexDirection: "row", gap: 13, marginTop: 30 },
+  profileChoice: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: palette.line,
+    paddingVertical: 24,
+    alignItems: "center",
+    shadowColor: palette.ink,
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 7 },
+  },
+  profileAvatar: {
+    overflow: "hidden",
+    borderColor: palette.paper,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarImage: { width: "100%", height: "100%" },
+  profileInitial: { color: palette.paper, fontWeight: "900" },
+  profileChoiceName: {
+    color: palette.ink,
+    fontSize: 18,
+    fontWeight: "800",
+    marginTop: 14,
+  },
+  enterProfile: {
+    flexDirection: "row",
+    gap: 5,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  enterProfileText: { color: palette.rose, fontSize: 11, fontWeight: "700" },
+  gatePrivacy: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  gatePrivacyText: { color: palette.muted, fontSize: 10 },
+  loadingScreen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: palette.cream,
+  },
+  loadingText: {
+    color: palette.ink,
+    fontSize: 20,
+    fontWeight: "800",
+    marginTop: 13,
+  },
+  editProfileButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    backgroundColor: palette.paper,
+    borderWidth: 1,
+    borderColor: palette.line,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profileHero: {
+    alignItems: "center",
+    backgroundColor: palette.paper,
+    borderRadius: 28,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: palette.line,
+  },
+  photoBadge: {
+    position: "absolute",
+    right: 0,
+    bottom: 1,
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: palette.paper,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profileName: {
+    color: palette.ink,
+    fontSize: 23,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+    marginTop: 13,
+  },
+  profileBirth: { color: palette.muted, fontSize: 11, marginTop: 5 },
+  profileBio: {
+    color: palette.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "center",
+    maxWidth: 300,
+    marginTop: 13,
+  },
+  outlineProfileButton: {
+    borderWidth: 1,
+    borderRadius: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+    marginTop: 17,
+  },
+  outlineProfileButtonText: { fontSize: 11, fontWeight: "800" },
+  profileStats: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: palette.paper,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: palette.line,
+    paddingVertical: 15,
+    marginTop: 12,
+  },
+  profileStat: { flex: 1, alignItems: "center" },
+  profileStatValue: { color: palette.ink, fontSize: 18, fontWeight: "800" },
+  profileStatLabel: { color: palette.muted, fontSize: 9, marginTop: 2 },
+  profileStatDivider: { width: 1, height: 29, backgroundColor: palette.line },
+  settingsSectionTitle: {
+    color: palette.ink,
+    fontSize: 16,
+    fontWeight: "800",
+    marginTop: 25,
+    marginBottom: 10,
+  },
+  settingsCard: {
+    backgroundColor: palette.paper,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: palette.line,
+    paddingHorizontal: 14,
+  },
+  themeHint: {
+    color: palette.muted,
+    fontSize: 10,
+    fontWeight: "700",
+    marginTop: 15,
+    marginBottom: 12,
+  },
+  themeOptions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingBottom: 15,
+  },
+  themeOption: { alignItems: "center", minWidth: 62 },
+  themeSwatch: {
+    width: 39,
+    height: 39,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: "transparent",
+  },
+  themeSwatchActive: { borderColor: "rgba(255,255,255,0.75)" },
+  themeName: { color: palette.muted, fontSize: 9, marginTop: 6 },
+  settingRow: {
+    minHeight: 73,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionSettingRow: {
+    minHeight: 65,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  settingIcon: {
+    width: 39,
+    height: 39,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 11,
+  },
+  settingText: { flex: 1, paddingRight: 8 },
+  settingLabel: { color: palette.ink, fontSize: 12, fontWeight: "800" },
+  settingDescription: {
+    color: palette.muted,
+    fontSize: 9,
+    lineHeight: 13,
+    marginTop: 3,
+  },
+  settingDivider: { height: 1, backgroundColor: palette.line, marginLeft: 50 },
+  aboutBox: {
+    backgroundColor: "#FAF6F7",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 13,
+  },
+  aboutText: { color: palette.muted, fontSize: 11, lineHeight: 17 },
+  aboutSignature: { fontSize: 10, fontWeight: "800", marginTop: 8 },
+  switchProfileButton: {
+    height: 53,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "#E4C4C6",
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
+  },
+  switchProfileText: { color: palette.rose, fontSize: 12, fontWeight: "800" },
+  editModalPage: { flex: 1, backgroundColor: palette.cream },
+  fullModalHeader: {
+    height: 67,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: palette.line,
+  },
+  fullModalTitle: { color: palette.ink, fontSize: 16, fontWeight: "800" },
+  fullModalSave: { fontSize: 13, fontWeight: "800" },
+  editProfileContent: { padding: 22, paddingBottom: 50 },
+  editPhotoArea: { alignItems: "center", marginBottom: 28 },
+  editPhotoBadge: {
+    position: "absolute",
+    top: 79,
+    marginLeft: 77,
+    width: 35,
+    height: 35,
+    borderRadius: 13,
+    borderWidth: 3,
+    borderColor: palette.cream,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  changePhotoText: { fontSize: 11, fontWeight: "800", marginTop: 11 },
+  profileBioInput: { height: 112, paddingTop: 14, textAlignVertical: "top" },
+  characterCount: {
+    color: palette.muted,
+    fontSize: 9,
+    textAlign: "right",
+    marginTop: -13,
+  },
 });
