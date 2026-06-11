@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,6 +21,29 @@ import {
   TextInput,
   View,
 } from "react-native";
+import {
+  createItem,
+  getItems,
+  getMonthlyGoals,
+  getProfiles,
+  toggleItemDone,
+  updateItem,
+  updateProfile,
+  updateProfileSettings,
+  uploadItemPhoto,
+  uploadProfilePhoto,
+  upsertMonthlyGoal,
+} from "../../src/services/apiClient";
+import {
+  loadActiveProfileId,
+  loadCachedItems,
+  loadCachedMonthlyGoals,
+  loadCachedProfiles,
+  saveActiveProfileId,
+  saveCachedItems,
+  saveCachedMonthlyGoals,
+  saveCachedProfiles,
+} from "../../src/services/storageService";
 
 type Category = "Filme" | "Serie" | "Jogo" | "Role" | "Anime" | "Plano";
 type MemoryCategory = Exclude<Category, "Plano">;
@@ -35,7 +57,7 @@ type CollectionFilters = {
   rating: RatingFilter;
 };
 type AddMode = "memory" | "plan";
-type ThemeName = "Light" | "Dark" | "Cinnamoroll" | "Chococat";
+type ThemeName = "Romance" | "Lavanda" | "Floresta" | "Noite" | "Cinnamoroll" | "Chococat";
 
 type AppTheme = {
   accent: string;
@@ -53,7 +75,8 @@ type AppTheme = {
 };
 
 type Profile = {
-  id: "leticia" | "luis";
+  id: string;
+  code?: string;
   name: string;
   birthDate: string;
   bio: string;
@@ -61,6 +84,7 @@ type Profile = {
   color: string;
   theme: ThemeName;
   notifications: boolean;
+  privateProfile?: boolean;
   weeklyQuestion: boolean;
 };
 
@@ -78,6 +102,7 @@ type CoupleItem = {
   done: boolean;
   rating?: number;
   color: string;
+  createdByProfileId?: string;
 };
 
 type MonthlyGoal = {
@@ -119,7 +144,7 @@ const characterImages: Record<
 };
 
 const themes: Record<ThemeName, AppTheme> = {
-  Light: {
+  Romance: {
     accent: "#C65D6C",
     accentSoft: "#F9E9E8",
     background: "#FCF8F4",
@@ -128,10 +153,34 @@ const themes: Record<ThemeName, AppTheme> = {
     title: palette.ink,
     muted: palette.muted,
     heroColors: ["#D36A76", "#A77BC0"],
-    label: "Light mode",
-    icon: "sunny-outline",
+    label: "Romance",
+    icon: "heart-outline",
   },
-  Dark: {
+  Lavanda: {
+    accent: "#9175BA",
+    accentSoft: "#EEE8F7",
+    background: "#FAF7FD",
+    surface: "#FFFFFF",
+    border: "#E4DAEF",
+    title: palette.ink,
+    muted: "#746B7D",
+    heroColors: ["#A58AC7", "#C68BAD"],
+    label: "Lavanda",
+    icon: "flower-outline",
+  },
+  Floresta: {
+    accent: "#557D6B",
+    accentSoft: "#E3EFE9",
+    background: "#F6FAF7",
+    surface: "#FFFFFF",
+    border: "#D6E5DC",
+    title: "#26382F",
+    muted: "#66756D",
+    heroColors: ["#668E79", "#8DA978"],
+    label: "Floresta",
+    icon: "leaf-outline",
+  },
+  Noite: {
     accent: "#B89BE8",
     accentSoft: "#352D44",
     background: "#18151D",
@@ -140,7 +189,7 @@ const themes: Record<ThemeName, AppTheme> = {
     title: "#FFF8FC",
     muted: "#BEB3BD",
     heroColors: ["#514463", "#785B80"],
-    label: "Dark mode",
+    label: "Noite",
     icon: "moon-outline",
     isDark: true,
   },
@@ -171,9 +220,10 @@ const themes: Record<ThemeName, AppTheme> = {
 };
 
 function normalizeThemeName(theme: string): ThemeName {
-  if (theme === "Dark" || theme === "Noite") return "Dark";
+  if (theme === "Dark" || theme === "Noite") return "Noite";
+  if (theme === "Lavanda" || theme === "Floresta") return theme;
   if (theme === "Cinnamoroll" || theme === "Chococat") return theme;
-  return "Light";
+  return "Romance";
 }
 
 const initialProfiles: Profile[] = [
@@ -183,7 +233,7 @@ const initialProfiles: Profile[] = [
     birthDate: "18/09/2003",
     bio: "Apaixonada por histórias, café e pelos nossos domingos sem pressa.",
     color: "#E9A29D",
-    theme: "Light",
+    theme: "Romance",
     notifications: true,
     weeklyQuestion: true,
   },
@@ -193,7 +243,7 @@ const initialProfiles: Profile[] = [
     birthDate: "03/05/2001",
     bio: "Jogos cooperativos, filmes longos e qualquer plano que seja a dois.",
     color: "#9B8BC1",
-    theme: "Light",
+    theme: "Lavanda",
     notifications: true,
     weeklyQuestion: false,
   },
@@ -3215,13 +3265,14 @@ export default function App() {
 
   useEffect(() => {
     Promise.all([
-      AsyncStorage.getItem(STORAGE_KEY),
-      AsyncStorage.getItem(PROFILES_KEY),
-      AsyncStorage.getItem(MONTHLY_GOALS_KEY),
+      loadCachedItems(),
+      loadCachedProfiles(),
+      loadCachedMonthlyGoals(),
+      loadActiveProfileId(),
     ])
-      .then(([storedItems, storedProfiles, storedMonthlyGoals]) => {
+      .then(([storedItems, storedProfiles, storedMonthlyGoals, storedActiveProfile]) => {
         if (storedItems) {
-          const parsedItems = JSON.parse(storedItems) as CoupleItem[];
+          const parsedItems = storedItems as CoupleItem[];
           setItems(
             parsedItems.map((item) => {
               const plannedFor =
@@ -3243,7 +3294,7 @@ export default function App() {
           );
         }
         if (storedProfiles) {
-          const parsedProfiles = JSON.parse(storedProfiles) as Profile[];
+          const parsedProfiles = storedProfiles as unknown as Profile[];
           setProfiles(
             parsedProfiles.map((profile) => {
               const legacyProfile = profile as Profile & {
@@ -3261,31 +3312,52 @@ export default function App() {
           );
         }
         if (storedMonthlyGoals) {
-          setMonthlyGoals(JSON.parse(storedMonthlyGoals));
+          setMonthlyGoals(storedMonthlyGoals);
         }
+        if (storedActiveProfile) setActiveProfileId(storedActiveProfile);
       })
       .catch(() => undefined)
-      .finally(() => setLoaded(true));
+      .finally(() => {
+        setLoaded(true);
+        Promise.all([getProfiles(), getItems(), getMonthlyGoals()])
+          .then(([remoteProfiles, remoteItems, remoteGoals]) => {
+            if (remoteProfiles.length) {
+              const normalized = remoteProfiles.map((profile) => ({
+                ...profile,
+                theme: normalizeThemeName(profile.theme),
+              })) as unknown as Profile[];
+              setProfiles(normalized);
+              void saveCachedProfiles(remoteProfiles);
+            }
+            setItems(remoteItems as CoupleItem[]);
+            setMonthlyGoals(
+              Object.fromEntries(remoteGoals.map((goal) => [goal.monthKey, goal])),
+            );
+          })
+          .catch(() => undefined);
+      });
   }, []);
 
   useEffect(() => {
-    if (loaded) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    if (loaded) void saveCachedItems(items);
   }, [items, loaded]);
 
   useEffect(() => {
-    if (loaded) AsyncStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+    if (loaded) void saveCachedProfiles(profiles as never);
   }, [loaded, profiles]);
 
   useEffect(() => {
-    if (loaded) {
-      AsyncStorage.setItem(MONTHLY_GOALS_KEY, JSON.stringify(monthlyGoals));
-    }
+    if (loaded) void saveCachedMonthlyGoals(monthlyGoals);
   }, [loaded, monthlyGoals]);
+
+  useEffect(() => {
+    if (loaded) void saveActiveProfileId(activeProfileId);
+  }, [activeProfileId, loaded]);
 
   const activeProfile = profiles.find(
     (profile) => profile.id === activeProfileId,
   );
-  const activeTheme = themes[activeProfile?.theme ?? "Light"];
+  const activeTheme = themes[activeProfile?.theme ?? "Romance"];
   const openAddModal = (mode: AddMode) => {
     setEditingMemory(undefined);
     setAddMode(mode);
@@ -3295,6 +3367,67 @@ export default function App() {
     setEditingMemory(item);
     setAddMode("memory");
     setModalVisible(true);
+  };
+  const showSyncError = () =>
+    Alert.alert("Sem conexão com a API", "A alteração local foi mantida.");
+  const handleToggle = async (id: string) => {
+    const previous = items;
+    const completedOn = toIsoDate(new Date());
+    setItems((current) => current.map((item) => item.id === id
+      ? item.done ? { ...item, done: false, completedOn: undefined }
+        : { ...item, done: true, completedOn }
+      : item));
+    try {
+      const saved = (await toggleItemDone(id)) as CoupleItem;
+      setItems((current) => current.map((item) => item.id === id ? saved : item));
+    } catch {
+      setItems(previous);
+      showSyncError();
+    }
+  };
+  const handleProfileSave = async (updated: Profile, settingsOnly = false) => {
+    setProfiles((current) => current.map((profile) => profile.id === updated.id ? updated : profile));
+    try {
+      const saved = settingsOnly
+        ? await updateProfileSettings(updated.id, updated as never)
+        : await updateProfile(updated.id, updated as never);
+      const withPhoto = updated.photoUri && !/^https?:\/\//.test(updated.photoUri)
+        ? await uploadProfilePhoto(updated.id, { uri: updated.photoUri })
+        : saved;
+      const normalized = { ...withPhoto, theme: normalizeThemeName(withPhoto.theme) } as unknown as Profile;
+      setProfiles((current) => current.map((profile) => profile.id === normalized.id ? normalized : profile));
+    } catch {
+      showSyncError();
+    }
+  };
+  const handleItemSave = async (item: CoupleItem) => {
+    const editing = Boolean(editingMemory);
+    const optimistic = { ...item, createdByProfileId: activeProfileId ?? undefined };
+    setItems((current) => editing
+      ? current.map((currentItem) => currentItem.id === optimistic.id ? optimistic : currentItem)
+      : [optimistic, ...current]);
+    setModalVisible(false);
+    setEditingMemory(undefined);
+    try {
+      let saved = editing ? await updateItem(optimistic.id, optimistic) : await createItem(optimistic);
+      if (optimistic.photoUri && !/^https?:\/\//.test(optimistic.photoUri)) {
+        saved = await uploadItemPhoto(saved.id, { uri: optimistic.photoUri });
+      }
+      setItems((current) => [saved as CoupleItem, ...current.filter((currentItem) =>
+        currentItem.id !== optimistic.id && currentItem.id !== saved.id)]);
+    } catch {
+      showSyncError();
+    }
+  };
+  const handleGoalSave = async (goal: MonthlyGoal) => {
+    setMonthlyGoals((current) => ({ ...current, [goal.monthKey]: goal }));
+    setMonthlyGoalVisible(false);
+    try {
+      const saved = await upsertMonthlyGoal(goal.monthKey, goal);
+      setMonthlyGoals((current) => ({ ...current, [saved.monthKey]: saved }));
+    } catch {
+      showSyncError();
+    }
   };
   const navigateToTab = useCallback(
     (nextTab: Tab) => {
@@ -3332,18 +3465,6 @@ export default function App() {
 
   const screen = useMemo(() => {
     if (!activeProfile) return null;
-    const onToggle = (id: string) => {
-      const completedOn = toIsoDate(new Date());
-      setItems((current) =>
-        current.map((item) =>
-          item.id === id
-            ? item.done
-              ? { ...item, done: false, completedOn: undefined }
-              : { ...item, done: true, completedOn }
-            : item,
-        ),
-      );
-    };
     if (tab === "colecao")
       return (
         <CollectionScreen
@@ -3361,7 +3482,7 @@ export default function App() {
           theme={activeTheme}
           onConfigureGoal={() => setMonthlyGoalVisible(true)}
           onAddIdea={() => openAddModal("plan")}
-          onToggle={onToggle}
+          onToggle={handleToggle}
         />
       );
     if (tab === "perfil")
@@ -3371,13 +3492,7 @@ export default function App() {
           items={items}
           theme={activeTheme}
           onEdit={() => setEditProfileVisible(true)}
-          onUpdate={(updated) =>
-            setProfiles((current) =>
-              current.map((profile) =>
-                profile.id === updated.id ? updated : profile,
-              ),
-            )
-          }
+          onUpdate={(updated) => void handleProfileSave(updated, true)}
           onSwitchProfile={() => {
             setTab("inicio");
             setActiveProfileId(null);
@@ -3478,17 +3593,7 @@ export default function App() {
           setModalVisible(false);
           setEditingMemory(undefined);
         }}
-        onSave={(item) => {
-          setItems((current) =>
-            editingMemory
-              ? current.map((currentItem) =>
-                  currentItem.id === item.id ? item : currentItem,
-                )
-              : [item, ...current],
-          );
-          setModalVisible(false);
-          setEditingMemory(undefined);
-        }}
+        onSave={(item) => void handleItemSave(item)}
       />
       <MonthlyGoalModal
         visible={monthlyGoalVisible}
@@ -3497,13 +3602,7 @@ export default function App() {
         goal={monthlyGoals[PLANS_MONTH_KEY]}
         theme={activeTheme}
         onClose={() => setMonthlyGoalVisible(false)}
-        onSave={(goal) => {
-          setMonthlyGoals((current) => ({
-            ...current,
-            [goal.monthKey]: goal,
-          }));
-          setMonthlyGoalVisible(false);
-        }}
+        onSave={(goal) => void handleGoalSave(goal)}
       />
       <EditProfileModal
         visible={editProfileVisible}
@@ -3511,11 +3610,7 @@ export default function App() {
         accent={activeTheme.accent}
         onClose={() => setEditProfileVisible(false)}
         onSave={(updated) => {
-          setProfiles((current) =>
-            current.map((profile) =>
-              profile.id === updated.id ? updated : profile,
-            ),
-          );
+          void handleProfileSave(updated);
           setEditProfileVisible(false);
         }}
       />

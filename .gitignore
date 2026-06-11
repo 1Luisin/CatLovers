@@ -4,3 +4,9 @@ dist/
 web-build/
 *.log
 .DS_Store
+.env
+.env.local
+backend/.env
+backend/dist/
+backend/uploads/*
+!backend/uploads/.gitkeep

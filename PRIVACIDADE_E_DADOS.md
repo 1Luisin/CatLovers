@@ -28,9 +28,13 @@ funcionalidades.
 
 ## 3. Situação atual
 
-Na versão atual, os dados estruturados ficam no `AsyncStorage` do dispositivo
-ou navegador. Imagens são referenciadas por URI local. Ainda não existe envio
-para uma API do CatLovers nem armazenamento em um banco remoto.
+O aplicativo usa o `AsyncStorage` como cache local e sincroniza perfis,
+lembranças, planos e metas com uma API PostgreSQL quando ela está disponível.
+Fotos selecionadas podem ser enviadas ao servidor e servidas por URL.
+
+A entrada ainda ocorre apenas pela escolha de perfil. Não há autenticação,
+senha, JWT ou controle de autorização nesta etapa, portanto a API deve ser
+mantida em rede e ambiente privados.
 
 ## 4. Integração futura com API e banco
 

@@ -1,277 +1,186 @@
 # CatLovers
 
-CatLovers é um aplicativo pessoal para casais organizarem planos, registrarem
-lembranças e reunirem atividades que desejam compartilhar.
+CatLovers é um aplicativo pessoal para Luis e Letícia registrarem memórias,
+organizarem planos e personalizarem a experiência de cada perfil.
 
-O projeto foi criado inicialmente para Letícia e Luis e está sendo desenvolvido
-como uma aplicação multiplataforma para Android, iOS e web.
+O app usa Expo/React Native em Android, iOS e web. A entrada continua sendo pela
+escolha entre os perfis de Luis e Letícia. Não existe login, senha, JWT,
+cadastro por e-mail ou refresh token nesta versão.
 
-## Objetivo
-
-O CatLovers busca ser um espaço privado e afetivo para:
-
-- guardar lembranças do casal;
-- planejar atividades e datas futuras;
-- organizar filmes, séries, jogos, rolês e animes;
-- acompanhar ideias e planos concluídos;
-- personalizar a experiência de cada pessoa;
-- centralizar momentos importantes em um único lugar.
-
-## Estado atual
-
-O projeto está na versão `1.1.0` e funciona como um protótipo local. A
-navegação principal, o calendário de planos, a coleção de lembranças, os perfis
-e a persistência no dispositivo já estão implementados.
-
-### Perfis e aparência
-
-- seleção entre os perfis de Letícia e Luis;
-- edição de nome, data de nascimento, biografia e foto;
-- preferências individuais salvas por perfil;
-- temas Light mode, Dark mode, Cinnamoroll e Chococat;
-- cores, superfícies, ilustrações e destaques adaptados ao tema ativo;
-- transições animadas entre as áreas do aplicativo.
-
-### Tela inicial
-
-- saudação personalizada para o perfil ativo;
-- destaque para o próximo plano;
-- resumo de momentos salvos e ideias pendentes;
-- exibição das três lembranças mais recentes;
-- acesso direto à coleção completa.
-
-### Coleção de lembranças
-
-- categorias Filme, Série, Jogo, Rolê e Anime;
-- criação e edição de lembranças;
-- data do acontecimento selecionada por calendário;
-- avaliação opcional de uma a cinco estrelas;
-- foto opcional escolhida da galeria;
-- agrupamento cronológico por mês;
-- filtros combináveis por categoria, mês e avaliação.
-
-### Planos do casal
-
-- criação de planos com os tipos Filme, Série, Jogo, Rolê, Anime e Outros;
-- data prevista opcional selecionada por calendário;
-- calendário mensal navegável;
-- agenda com os planos previstos ou concluídos em cada dia;
-- lista geral de planos;
-- marcação e desmarcação de planos como concluídos;
-- registro da data de conclusão;
-- progresso geral dos planos;
-- criação e edição de uma meta compartilhada para o mês.
-
-## Fluxo do aplicativo
-
-1. O usuário escolhe o perfil de Letícia ou Luis.
-2. A tela inicial apresenta o próximo plano e um resumo dos registros.
-3. A coleção reúne as lembranças e permite criar, editar e filtrar registros.
-4. A área de planos organiza ideias em uma lista e em um calendário.
-5. A meta mensal registra um objetivo compartilhado pelo casal.
-6. A área de perfil permite editar dados pessoais, foto, tema e preferências.
-7. A opção de troca de perfil retorna à seleção inicial.
-
-## Limitações atuais
-
-- os dados existem somente no aparelho ou navegador em uso;
-- não há autenticação, contas online ou sincronização entre dispositivos;
-- as preferências de notificações e pergunta semanal ainda não executam ações;
-- lembranças e planos ainda não podem ser excluídos;
-- planos existentes ainda não possuem fluxo de edição;
-- alguns textos da tela inicial e a referência da meta mensal estão fixos em
-  junho de 2026;
-- as fotos são salvas por URI local e podem deixar de funcionar caso o arquivo
-  original seja removido ou alterado pelo sistema;
-- ainda não existe configuração de build e distribuição com EAS;
-- não há testes automatizados.
-
-## Tecnologias
-
-- [Expo](https://expo.dev/) SDK 54
-- [React](https://react.dev/) 19
-- [React Native](https://reactnative.dev/) 0.81
-- [React Native Web](https://necolas.github.io/react-native-web/)
-- [TypeScript](https://www.typescriptlang.org/) com modo estrito
-- [AsyncStorage](https://react-native-async-storage.github.io/async-storage/)
-- [Expo Image Picker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)
-- [Expo Linear Gradient](https://docs.expo.dev/versions/latest/sdk/linear-gradient/)
-- [Expo Vector Icons](https://docs.expo.dev/guides/icons/)
-- API `Animated` do React Native
-
-## Estrutura atual
+## Arquitetura
 
 ```text
 CatLovers/
-|-- assets/
-|   `-- themes/
-|       |-- README.md
-|       |-- chococat.png
-|       `-- cinnamoroll.png
-|-- versions/
-|   |-- IOS/
-|   |   `-- App.tsx     # Aplicação completa para iOS
-|   |-- ANDROID/
-|   |   `-- App.tsx     # Aplicação completa para Android
-|   |-- WEB/
-|   |   `-- App.tsx     # Aplicação completa e responsiva para web
-|   |-- index.ios.tsx
-|   |-- index.android.tsx
-|   |-- index.web.tsx
-|   `-- index.tsx
-|-- App.tsx            # Entrada principal selecionada pelo Expo
-|-- PRIVACIDADE_E_DADOS.md # Política técnica atual e planejada
-|-- app.json           # Configuração do Expo, Android, iOS e web
-|-- package.json       # Dependências e scripts
-|-- package-lock.json  # Versões fixadas das dependências
-|-- tsconfig.json      # Configuração estrita do TypeScript
-|-- .gitignore
-`-- README.md
+|-- assets/themes/              # Imagens dos temas
+|-- src/
+|   |-- components/             # Componentes visuais compartilhados
+|   |-- data/                   # Perfis e dados iniciais
+|   |-- screens/                # Contêineres de telas compartilhados
+|   |-- services/
+|   |   |-- apiClient.ts        # HTTP, mapeamento e upload
+|   |   `-- storageService.ts   # Cache AsyncStorage
+|   |-- theme/themes.ts         # Paletas e assets
+|   `-- types/index.ts          # Tipos de domínio
+|-- versions/                   # Interfaces específicas de iOS, Android e web
+|-- backend/
+|   |-- src/routes/             # Endpoints Express
+|   |-- src/repositories/       # Consultas PostgreSQL
+|   |-- src/scripts/            # Seed idempotente
+|   |-- sql/                    # Melhorias opcionais, não aplicadas
+|   `-- uploads/                # Arquivos locais enviados
+`-- App.tsx                     # Entrada/orquestração do Expo
 ```
 
-Cada plataforma possui uma aplicação completa em sua própria pasta. As regras
-e funcionalidades permanecem equivalentes, enquanto navegação, dimensões,
-superfícies e modais podem ser adaptados ao ambiente de uso.
+O AsyncStorage agora funciona como cache: o app carrega o conteúdo local
+primeiro, tenta sincronizar com a API e mantém o cache quando a API está
+indisponível. Escritas atualizam a interface localmente e usam o retorno da API
+como fonte oficial quando a chamada funciona.
 
-Essa independência exige que novas funcionalidades sejam implementadas nas três
-versões. Em uma evolução futura, modelos e serviços sem interface poderão ser
-extraídos para pacotes compartilhados sem voltar a unificar os designs.
+## Requisitos
 
-## Persistência de dados
+- Node.js 20 ou superior
+- npm
+- PostgreSQL com as tabelas já criadas
+- Expo Go, emulador ou navegador
 
-Os dados são armazenados localmente com `AsyncStorage`.
-
-Chaves utilizadas:
-
-- `@catlovers/items`: lembranças e planos;
-- `@catlovers/profiles`: dados, temas e preferências dos perfis;
-- `@catlovers/monthly-goals`: metas mensais do casal.
-
-Ao iniciar, o aplicativo também normaliza alguns registros antigos, incluindo
-acentuação, datas previstas e datas de conclusão.
-
-Essa estratégia atende ao protótipo atual, mas não sincroniza informações entre
-o site e os aplicativos instalados em outros dispositivos.
-
-## Configuração do aplicativo
-
-- nome: `CatLovers`;
-- slug Expo: `catlovers`;
-- versão: `1.1.0`;
-- orientação: retrato;
-- estilo de interface: claro;
-- identificador iOS: `com.catlovers.app`;
-- pacote Android: `com.catlovers.app`;
-- tablets iOS: não suportados;
-- bundler web: Metro.
-
-O seletor de imagens solicita acesso à galeria somente para fotos de perfil e
-lembranças. O aplicativo não solicita acesso ao microfone.
-
-## Como executar
-
-### Pré-requisitos
-
-- Node.js compatível com Expo SDK 54;
-- npm;
-- Expo Go em um dispositivo móvel ou um emulador configurado.
-
-### Instalação
+## Frontend
 
 ```bash
-git clone https://github.com/1Luisin/CatLovers.git
-cd CatLovers
 npm ci
-```
-
-O `npm ci` instala exatamente as versões registradas no `package-lock.json`.
-Sem essa etapa, comandos como `npm start` não encontram o executável local do
-Expo.
-
-### Iniciar o projeto
-
-```bash
+copy .env.example .env
 npm start
 ```
 
-O Expo exibirá as opções para abrir a aplicação em um dispositivo, emulador ou
-navegador.
+O `.env` do frontend usa:
 
-Também estão disponíveis:
+```env
+EXPO_PUBLIC_API_URL=http://localhost:3333
+```
+
+No Android Emulator, use normalmente `http://10.0.2.2:3333`. Em celular físico,
+use o IP da máquina na mesma rede, por exemplo
+`http://192.168.1.20:3333`. Reinicie o Metro depois de alterar a variável.
+
+Comandos disponíveis:
 
 ```bash
 npm run android
 npm run ios
 npm run web
-```
-
-### Entradas por plataforma
-
-O Expo seleciona automaticamente a aplicação correspondente:
-
-- iOS: `versions/IOS/App.tsx`;
-- Android: `versions/ANDROID/App.tsx`;
-- web: `versions/WEB/App.tsx`.
-
-Cada entrada carrega um código-fonte completo e dedicado. As funcionalidades
-são equivalentes, mas a apresentação é específica para o ambiente:
-
-- iOS mantém o design móvel original;
-- Android usa barra inferior fixa, alvos de toque maiores e modais móveis;
-- web usa navegação lateral em telas grandes, conteúdo amplo e modais
-  centralizados, com fallback responsivo para janelas estreitas.
-
-Para testar em um iPhone durante o desenvolvimento:
-
-1. instale o Expo Go pela App Store;
-2. mantenha o computador e o iPhone na mesma rede;
-3. execute `npm start`;
-4. escaneie o QR Code exibido pelo Expo.
-
-O simulador de iOS exige macOS com o ambiente da Apple configurado. O projeto
-ainda não possui `eas.json` nem um fluxo configurado para gerar builds
-independentes para TestFlight ou App Store.
-
-### Verificação de tipos
-
-```bash
 npm run typecheck
 ```
 
-## Próximos passos
+## Backend
 
-- substituir datas e mês fixos por referências dinâmicas;
-- permitir editar e excluir planos;
-- permitir excluir lembranças;
-- implementar notificações e lembretes reais;
-- implementar a pergunta semanal;
-- adicionar autenticação, banco de dados e sincronização segura;
-- tornar as imagens persistentes entre dispositivos;
-- separar a arquitetura em módulos;
-- adicionar testes automatizados;
-- configurar EAS Build, TestFlight e distribuição Android;
-- evoluir a experiência web.
+```bash
+cd backend
+npm install
+copy .env.example .env
+```
 
-## Privacidade
+Configure `backend/.env`:
 
-Na versão atual, perfis, preferências, lembranças, fotos referenciadas, planos e
-metas ficam no armazenamento local do dispositivo ou navegador. A arquitetura
-planejada prevê autenticação, API, banco de dados e sincronização segura.
+```env
+PORT=3333
+DATABASE_URL=postgres://app_user:SUA_SENHA@localhost:5432/app_casal
+UPLOAD_DIR=uploads
+PUBLIC_BASE_URL=http://localhost:3333
+```
 
-O tratamento atual e os requisitos para essa integração estão documentados em
-[`PRIVACIDADE_E_DADOS.md`](./PRIVACIDADE_E_DADOS.md).
+Depois execute:
 
-## Imagens dos temas
+```bash
+npm run seed
+npm run dev
+```
 
-As imagens de Cinnamoroll e Chococat foram obtidas de páginas oficiais da
-Sanrio. As fontes e observações de direitos autorais estão documentadas em
-`assets/themes/README.md`.
+O seed usa `ON CONFLICT (code) DO NOTHING`, cria somente os perfis ausentes e
+não altera nem remove tabelas. A API gera UUIDs com `crypto.randomUUID()`.
 
-Essas imagens são usadas apenas neste protótipo pessoal e não são
-relicenciadas pelo repositório.
+Verificações:
 
-## Projeto pessoal
+```bash
+npm run typecheck
+npm run build
+curl http://localhost:3333/health
+```
 
-CatLovers é um projeto pessoal, criado para organizar e preservar experiências
-compartilhadas de Letícia e Luis. O repositório não possui, neste momento, uma
-licença de uso público.
+## Endpoints
+
+- `GET /health`
+- `GET|POST /profiles`
+- `GET|PUT /profiles/:id`
+- `PATCH /profiles/:id/settings`
+- `POST /profiles/:id/photo`
+- `GET|POST /items`
+- `GET|PUT|DELETE /items/:id`
+- `PATCH /items/:id/toggle-done`
+- `POST /items/:id/photo`
+- `GET /monthly-goals`
+- `GET|PUT /monthly-goals/:monthKey`
+- `GET /uploads/:fileName`
+
+Uploads aceitam JPEG, PNG e WebP de até 10 MB. Uma nova foto de item substitui
+a anterior e o arquivo antigo é removido.
+
+## Testar no DBeaver
+
+1. Abra a conexão usada em `DATABASE_URL`.
+2. Execute `npm run seed` no backend.
+3. Confirme os perfis:
+
+```sql
+SELECT id, code, name, theme FROM profiles ORDER BY code;
+```
+
+4. Com a API em execução, crie ou edite dados no app e consulte:
+
+```sql
+SELECT * FROM couple_items ORDER BY created_at DESC;
+SELECT * FROM monthly_goals ORDER BY month_key DESC;
+SELECT * FROM item_photos ORDER BY created_at DESC;
+```
+
+O arquivo `backend/sql/optional_improvements.sql` contém apenas índices
+opcionais e nunca é executado automaticamente.
+
+## Testar upload
+
+Com um UUID de perfil existente:
+
+```bash
+curl -X POST http://localhost:3333/profiles/UUID/photo \
+  -F "photo=@C:/caminho/foto.jpg"
+```
+
+Para um item:
+
+```bash
+curl -X POST http://localhost:3333/items/UUID/photo \
+  -F "photo=@C:/caminho/memoria.png"
+```
+
+A resposta deve trazer uma URL em `/uploads/...`. Abra essa URL no navegador e
+confirme o registro em `profiles.photo_url` ou `item_photos`.
+
+## Temas e regras preservadas
+
+Os temas compartilhados são Romance, Lavanda, Floresta, Noite, Cinnamoroll e
+Chococat. Valores antigos `Light` e `Dark` são normalizados.
+
+- categoria `Plano` representa plano; as demais representam memória;
+- memórias nascem concluídas e podem ter avaliação e foto;
+- planos nascem pendentes e podem ter data prevista;
+- concluir um plano preenche `completed_on`;
+- desmarcar um plano limpa `completed_on`;
+- metas mensais usam `YYYY-MM`;
+- cada perfil mantém tema, foto e preferências próprias.
+
+## Limitações atuais
+
+- não há autenticação ou autorização; a API deve ficar em ambiente privado;
+- uploads usam o disco local do servidor, não armazenamento em nuvem;
+- não existe fila offline ou resolução de conflitos;
+- notificações e pergunta semanal continuam apenas como preferências;
+- as interfaces específicas de plataforma ainda mantêm parte da composição
+  visual duplicada enquanto os tipos, dados e serviços já são compartilhados.
