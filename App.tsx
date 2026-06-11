@@ -25,6 +25,7 @@ import {
 
 type Category = "Filme" | "Serie" | "Jogo" | "Role" | "Anime" | "Plano";
 type MemoryCategory = Exclude<Category, "Plano">;
+type IdeaType = MemoryCategory | "Outros";
 type Tab = "inicio" | "colecao" | "planos" | "perfil";
 type CategoryFilter = "Todos" | MemoryCategory;
 type RatingFilter = "Todas" | "Sem avaliacao" | 1 | 2 | 3 | 4 | 5;
@@ -71,7 +72,7 @@ type CoupleItem = {
   id: string;
   title: string;
   category: Category;
-  ideaType?: MemoryCategory;
+  ideaType?: IdeaType;
   note: string;
   date: string;
   occurredOn?: string;
@@ -285,6 +286,22 @@ const categoryMeta: Record<
   Plano: { icon: "calendar-outline", color: palette.apricot, label: "Plano" },
 };
 
+const ideaTypeMeta: Record<
+  IdeaType,
+  { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }
+> = {
+  Filme: categoryMeta.Filme,
+  Serie: categoryMeta.Serie,
+  Jogo: categoryMeta.Jogo,
+  Role: categoryMeta.Role,
+  Anime: categoryMeta.Anime,
+  Outros: {
+    icon: "ellipsis-horizontal-outline",
+    color: "#8B8388",
+    label: "Outros",
+  },
+};
+
 const memoryCategories: MemoryCategory[] = [
   "Filme",
   "Serie",
@@ -292,6 +309,8 @@ const memoryCategories: MemoryCategory[] = [
   "Role",
   "Anime",
 ];
+
+const ideaTypes: IdeaType[] = [...memoryCategories, "Outros"];
 
 const monthNames = [
   "Janeiro",
@@ -1543,7 +1562,7 @@ function PlansScreen({
         <Ionicons name="heart" size={17} color={theme.accent} />
       </View>
       {plans.map((item) => {
-        const ideaMeta = item.ideaType ? categoryMeta[item.ideaType] : null;
+        const ideaMeta = item.ideaType ? ideaTypeMeta[item.ideaType] : null;
         return (
           <Pressable
             key={item.id}
@@ -2166,20 +2185,22 @@ function DateCalendar({
 function CategorySelector({
   label,
   category,
+  options,
   theme,
   onChange,
 }: {
   label: string;
-  category: MemoryCategory;
+  category: IdeaType;
+  options: IdeaType[];
   theme: AppTheme;
-  onChange: (category: MemoryCategory) => void;
+  onChange: (category: IdeaType) => void;
 }) {
   return (
     <>
       <Text style={[styles.inputLabel, { color: theme.title }]}>{label}</Text>
       <View style={styles.categoryGrid}>
-        {memoryCategories.map((item) => {
-          const meta = categoryMeta[item];
+        {options.map((item) => {
+          const meta = ideaTypeMeta[item];
           const active = category === item;
           return (
             <Pressable
@@ -2230,6 +2251,7 @@ function AddModal({
   onSave: (item: CoupleItem) => void;
 }) {
   const [category, setCategory] = useState<MemoryCategory>("Filme");
+  const [ideaType, setIdeaType] = useState<IdeaType>("Role");
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [selectedDate, setSelectedDate] = useState(() => toIsoDate(new Date()));
@@ -2260,10 +2282,9 @@ function AddModal({
     setCategory(
       editingItem && editingItem.category !== "Plano"
         ? editingItem.category
-        : mode === "plan"
-          ? "Role"
-          : "Filme",
+        : "Filme",
     );
+    setIdeaType(editingItem?.ideaType ?? "Role");
     setSelectedDate(initialDate);
     setVisibleMonth(
       new Date(initialDateValue.getFullYear(), initialDateValue.getMonth(), 1),
@@ -2310,7 +2331,7 @@ function AddModal({
           ? "Um novo momento para viver juntos."
           : "Uma lembrança especial guardada juntos."),
       category: savedCategory,
-      ideaType: isPlan ? category : undefined,
+      ideaType: isPlan ? ideaType : undefined,
       date: isPlan
         ? plannedDate
           ? formatCardDate(plannedDate)
@@ -2322,7 +2343,7 @@ function AddModal({
       done: editingItem?.done ?? !isPlan,
       rating: isPlan || rating === 0 ? undefined : rating,
       color: isPlan
-        ? categoryMeta[category].color
+        ? ideaTypeMeta[ideaType].color
         : categoryMeta[savedCategory].color,
     });
   };
@@ -2373,9 +2394,10 @@ function AddModal({
             <>
               <CategorySelector
                 label="Tipo de ideia"
-                category={category}
+                category={ideaType}
+                options={ideaTypes}
                 theme={theme}
-                onChange={setCategory}
+                onChange={setIdeaType}
               />
 
               <Text style={[styles.inputLabel, { color: theme.title }]}>
@@ -2464,8 +2486,11 @@ function AddModal({
               <CategorySelector
                 label="Que lembrança vamos guardar?"
                 category={category}
+                options={memoryCategories}
                 theme={theme}
-                onChange={setCategory}
+                onChange={(selectedCategory) =>
+                  selectedCategory !== "Outros" && setCategory(selectedCategory)
+                }
               />
 
               <Text style={[styles.inputLabel, { color: theme.title }]}>
