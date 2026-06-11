@@ -3,9 +3,11 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
+  Easing,
   Image,
   ImageSourcePropType,
   KeyboardAvoidingView,
@@ -2292,6 +2294,10 @@ function AddModal({
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("inicio");
+  const screenOpacity = useRef(new Animated.Value(1)).current;
+  const screenTranslateX = useRef(new Animated.Value(0)).current;
+  const previousTab = useRef<Tab>("inicio");
+  const transitionDirection = useRef(1);
   const [items, setItems] = useState<CoupleItem[]>(initialItems);
   const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
   const [activeProfileId, setActiveProfileId] = useState<Profile["id"] | null>(
@@ -2338,6 +2344,39 @@ export default function App() {
     setAddMode(mode);
     setModalVisible(true);
   };
+  const navigateToTab = useCallback(
+    (nextTab: Tab) => {
+      if (nextTab === tab) return;
+      const currentIndex = tabs.findIndex((item) => item.key === tab);
+      const nextIndex = tabs.findIndex((item) => item.key === nextTab);
+      transitionDirection.current = nextIndex > currentIndex ? 1 : -1;
+      setTab(nextTab);
+    },
+    [tab],
+  );
+
+  useEffect(() => {
+    if (previousTab.current === tab) return;
+    previousTab.current = tab;
+    screenOpacity.stopAnimation();
+    screenTranslateX.stopAnimation();
+    screenOpacity.setValue(0);
+    screenTranslateX.setValue(18 * transitionDirection.current);
+    Animated.parallel([
+      Animated.timing(screenOpacity, {
+        toValue: 1,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(screenTranslateX, {
+        toValue: 0,
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [screenOpacity, screenTranslateX, tab]);
 
   const screen = useMemo(() => {
     if (!activeProfile) return null;
@@ -2389,10 +2428,10 @@ export default function App() {
         items={items}
         profile={activeProfile}
         theme={activeTheme}
-        onViewAll={() => setTab("colecao")}
+        onViewAll={() => navigateToTab("colecao")}
       />
     );
-  }, [activeProfile, activeTheme, items, tab]);
+  }, [activeProfile, activeTheme, items, navigateToTab, tab]);
 
   if (!loaded) {
     return (
@@ -2423,7 +2462,17 @@ export default function App() {
         style={[styles.appShell, { backgroundColor: activeTheme.background }]}
       >
         <ThemeDecorations theme={activeTheme} />
-        <View style={styles.screenLayer}>{screen}</View>
+        <Animated.View
+          style={[
+            styles.screenLayer,
+            {
+              opacity: screenOpacity,
+              transform: [{ translateX: screenTranslateX }],
+            },
+          ]}
+        >
+          {screen}
+        </Animated.View>
         <View
           style={[
             styles.tabBar,
@@ -2438,7 +2487,7 @@ export default function App() {
             return (
               <Pressable
                 key={item.key}
-                onPress={() => setTab(item.key)}
+                onPress={() => navigateToTab(item.key)}
                 style={styles.tabButton}
               >
                 <Ionicons
