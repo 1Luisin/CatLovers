@@ -77,6 +77,7 @@ type CoupleItem = {
   date: string;
   occurredOn?: string;
   plannedFor?: string;
+  completedOn?: string;
   photoUri?: string;
   done: boolean;
   rating?: number;
@@ -343,6 +344,7 @@ const monthAbbreviations = [
 ];
 
 const weekdayLabels = ["D", "S", "T", "Q", "Q", "S", "S"];
+const calendarWeekdayLabels = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 
 function toIsoDate(date: Date) {
   const year = date.getFullYear();
@@ -385,15 +387,26 @@ function formatCardDate(value: string) {
   }`;
 }
 
-function getItemDate(item: CoupleItem) {
-  if (item.occurredOn) return fromIsoDate(item.occurredOn);
-
+function getLegacyCardDate(item: CoupleItem) {
   const [dayText, monthText] = item.date.toUpperCase().split(" ");
   const month = monthAbbreviations.indexOf(monthText);
   const day = Number(dayText);
-  if (month < 0 || !day) return new Date(0);
+  if (month < 0 || !day) return undefined;
 
-  return new Date(new Date().getFullYear(), month, day);
+  return toIsoDate(new Date(new Date().getFullYear(), month, day));
+}
+
+function getPlanCalendarDate(item: CoupleItem) {
+  if (item.category !== "Plano") return undefined;
+  const plannedFor = item.plannedFor ?? getLegacyCardDate(item);
+  return item.done ? item.completedOn ?? plannedFor : plannedFor;
+}
+
+function getItemDate(item: CoupleItem) {
+  if (item.occurredOn) return fromIsoDate(item.occurredOn);
+
+  const legacyDate = getLegacyCardDate(item);
+  return legacyDate ? fromIsoDate(legacyDate) : new Date(0);
 }
 
 function getMonthGroup(item: CoupleItem) {
@@ -1521,9 +1534,58 @@ function PlansScreen({
   onToggle: (id: string) => void;
   theme: AppTheme;
 }) {
-  const plans = items.filter((item) => item.category === "Plano");
+  const today = new Date();
+  const todayIso = toIsoDate(today);
+  const plans = useMemo(
+    () => items.filter((item) => item.category === "Plano"),
+    [items],
+  );
+  const [selectedDate, setSelectedDate] = useState(todayIso);
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1),
+  );
   const done = plans.filter((item) => item.done).length;
   const progress = plans.length ? done / plans.length : 0;
+  const calendarYear = visibleMonth.getFullYear();
+  const calendarMonth = visibleMonth.getMonth();
+  const firstWeekday = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const calendarCells = Array.from({ length: 42 }, (_, index) => {
+    const day = index - firstWeekday + 1;
+    return day > 0 && day <= daysInMonth ? day : null;
+  });
+  const plansByDate = useMemo(
+    () =>
+      plans.reduce<Record<string, CoupleItem[]>>((groups, item) => {
+        const date = getPlanCalendarDate(item);
+        if (!date) return groups;
+        groups[date] = [...(groups[date] ?? []), item];
+        return groups;
+      }, {}),
+    [plans],
+  );
+  const selectedPlans = plansByDate[selectedDate] ?? [];
+  const selectedDateValue = fromIsoDate(selectedDate);
+  const selectedDateLabel = `${selectedDateValue.getDate()} de ${
+    monthNames[selectedDateValue.getMonth()].toLocaleLowerCase("pt-BR")
+  } de ${selectedDateValue.getFullYear()}`;
+
+  const changeCalendarMonth = (offset: number) => {
+    const nextMonth = new Date(calendarYear, calendarMonth + offset, 1);
+    const selectedDay = fromIsoDate(selectedDate).getDate();
+    const nextMonthDays = new Date(
+      nextMonth.getFullYear(),
+      nextMonth.getMonth() + 1,
+      0,
+    ).getDate();
+    const nextSelectedDate = new Date(
+      nextMonth.getFullYear(),
+      nextMonth.getMonth(),
+      Math.min(selectedDay, nextMonthDays),
+    );
+    setVisibleMonth(nextMonth);
+    setSelectedDate(toIsoDate(nextSelectedDate));
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -1562,6 +1624,242 @@ function PlansScreen({
             "Use o botão acima para escolher um objetivo para este mês."}
         </Text>
       </LinearGradient>
+
+      <View style={styles.sectionHeader}>
+        <Text style={[styles.sectionTitle, { color: theme.title }]}>
+          Calendário do casal
+        </Text>
+        <Ionicons name="calendar" size={18} color={theme.accent} />
+      </View>
+      <View
+        style={[
+          styles.plansCalendarCard,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        <View style={styles.plansCalendarHeader}>
+          <Pressable
+            onPress={() => changeCalendarMonth(-1)}
+            style={[
+              styles.plansCalendarNav,
+              { backgroundColor: theme.accentSoft },
+            ]}
+            accessibilityLabel="Mês anterior"
+          >
+            <Ionicons name="chevron-back" size={18} color={theme.accent} />
+          </Pressable>
+          <View style={styles.plansCalendarHeading}>
+            <Text style={[styles.plansCalendarMonth, { color: theme.title }]}>
+              {monthNames[calendarMonth]} {calendarYear}
+            </Text>
+            <Text style={styles.plansCalendarSubtitle}>
+              Toque em um dia para ver os planos
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => changeCalendarMonth(1)}
+            style={[
+              styles.plansCalendarNav,
+              { backgroundColor: theme.accentSoft },
+            ]}
+            accessibilityLabel="Próximo mês"
+          >
+            <Ionicons name="chevron-forward" size={18} color={theme.accent} />
+          </Pressable>
+        </View>
+
+        <View style={styles.plansCalendarGrid}>
+          {calendarWeekdayLabels.map((label) => (
+            <Text key={label} style={styles.plansCalendarWeekday}>
+              {label}
+            </Text>
+          ))}
+          {calendarCells.map((day, index) => {
+            if (!day) {
+              return (
+                <View
+                  key={`calendar-empty-${index}`}
+                  style={styles.plansCalendarDayCell}
+                />
+              );
+            }
+
+            const isoDate = toIsoDate(
+              new Date(calendarYear, calendarMonth, day),
+            );
+            const dayPlans = plansByDate[isoDate] ?? [];
+            const selected = isoDate === selectedDate;
+            const isToday = isoDate === todayIso;
+
+            return (
+              <Pressable
+                key={isoDate}
+                onPress={() => setSelectedDate(isoDate)}
+                style={styles.plansCalendarDayCell}
+                accessibilityLabel={`${day} de ${monthNames[calendarMonth]}, ${
+                  dayPlans.length
+                } ${dayPlans.length === 1 ? "plano" : "planos"}`}
+              >
+                <View
+                  style={[
+                    styles.plansCalendarDay,
+                    isToday && {
+                      borderColor: theme.accent,
+                      borderWidth: 1,
+                    },
+                    selected && {
+                      backgroundColor: theme.accent,
+                      borderColor: theme.accent,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.plansCalendarDayText,
+                      { color: theme.title },
+                      selected && styles.plansCalendarDayTextSelected,
+                    ]}
+                  >
+                    {day}
+                  </Text>
+                  {dayPlans.length > 0 && (
+                    <View
+                      style={[
+                        styles.plansCalendarCount,
+                        {
+                          backgroundColor: selected
+                            ? palette.paper
+                            : theme.accent,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.plansCalendarCountText,
+                          { color: selected ? theme.accent : palette.paper },
+                        ]}
+                      >
+                        {dayPlans.length}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      <View
+        style={[
+          styles.dayAgenda,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        <View style={styles.dayAgendaHeader}>
+          <View>
+            <Text style={[styles.dayAgendaTitle, { color: theme.title }]}>
+              {selectedDateLabel}
+            </Text>
+            <Text style={styles.dayAgendaSubtitle}>
+              {selectedPlans.length === 0
+                ? "Nenhum plano para este dia"
+                : `${selectedPlans.length} ${
+                    selectedPlans.length === 1 ? "plano" : "planos"
+                  } neste dia`}
+            </Text>
+          </View>
+          {selectedDate === todayIso && (
+            <View
+              style={[
+                styles.todayBadge,
+                { backgroundColor: theme.accentSoft },
+              ]}
+            >
+              <Text style={[styles.todayBadgeText, { color: theme.accent }]}>
+                HOJE
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {selectedPlans.length === 0 ? (
+          <View style={styles.dayAgendaEmpty}>
+            <Ionicons
+              name="calendar-clear-outline"
+              size={24}
+              color={theme.accent}
+            />
+            <Text style={styles.dayAgendaEmptyText}>
+              Os planos previstos ou concluídos nesta data aparecerão aqui.
+            </Text>
+          </View>
+        ) : (
+          selectedPlans.map((item) => {
+            const ideaMeta = item.ideaType
+              ? ideaTypeMeta[item.ideaType]
+              : null;
+            return (
+              <Pressable
+                key={`agenda-${item.id}`}
+                onPress={() => onToggle(item.id)}
+                style={[
+                  styles.dayAgendaItem,
+                  { borderTopColor: theme.border },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.dayAgendaCheck,
+                    { borderColor: theme.accent },
+                    item.done && { backgroundColor: theme.accent },
+                  ]}
+                >
+                  {item.done && (
+                    <Ionicons
+                      name="checkmark"
+                      size={15}
+                      color={palette.paper}
+                    />
+                  )}
+                </View>
+                <View style={styles.dayAgendaContent}>
+                  <Text
+                    style={[
+                      styles.dayAgendaItemTitle,
+                      { color: theme.title },
+                      item.done && styles.doneText,
+                    ]}
+                  >
+                    {item.title}
+                  </Text>
+                  <Text style={styles.dayAgendaItemNote}>{item.note}</Text>
+                  <View style={styles.dayAgendaMeta}>
+                    {ideaMeta && (
+                      <Text
+                        style={[
+                          styles.dayAgendaType,
+                          { color: ideaMeta.color },
+                        ]}
+                      >
+                        {ideaMeta.label}
+                      </Text>
+                    )}
+                    <Text
+                      style={[
+                        styles.dayAgendaStatus,
+                        { color: theme.accent },
+                      ]}
+                    >
+                      {item.done ? "CONCLUÍDO" : "PREVISTO"}
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })
+        )}
+      </View>
 
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: theme.title }]}>
@@ -2779,12 +3077,23 @@ export default function App() {
         if (storedItems) {
           const parsedItems = JSON.parse(storedItems) as CoupleItem[];
           setItems(
-            parsedItems.map((item) => ({
-              ...item,
-              title: correctLegacyText(item.title),
-              note: correctLegacyText(item.note),
-              done: item.category === "Plano" ? item.done : true,
-            })),
+            parsedItems.map((item) => {
+              const plannedFor =
+                item.category === "Plano"
+                  ? item.plannedFor ?? getLegacyCardDate(item)
+                  : undefined;
+              return {
+                ...item,
+                title: correctLegacyText(item.title),
+                note: correctLegacyText(item.note),
+                done: item.category === "Plano" ? item.done : true,
+                plannedFor,
+                completedOn:
+                  item.category === "Plano" && item.done
+                    ? item.completedOn ?? plannedFor
+                    : undefined,
+              };
+            }),
           );
         }
         if (storedProfiles) {
@@ -2869,12 +3178,18 @@ export default function App() {
 
   const screen = useMemo(() => {
     if (!activeProfile) return null;
-    const onToggle = (id: string) =>
+    const onToggle = (id: string) => {
+      const completedOn = toIsoDate(new Date());
       setItems((current) =>
         current.map((item) =>
-          item.id === id ? { ...item, done: !item.done } : item,
+          item.id === id
+            ? item.done
+              ? { ...item, done: false, completedOn: undefined }
+              : { ...item, done: true, completedOn }
+            : item,
         ),
       );
+    };
     if (tab === "colecao")
       return (
         <CollectionScreen
@@ -3460,6 +3775,127 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 13,
   },
+  plansCalendarCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 15,
+    marginBottom: 12,
+  },
+  plansCalendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  plansCalendarNav: {
+    width: 36,
+    height: 36,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  plansCalendarHeading: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
+  plansCalendarMonth: { fontSize: 15, fontWeight: "900" },
+  plansCalendarSubtitle: { color: palette.muted, fontSize: 9, marginTop: 3 },
+  plansCalendarGrid: { flexDirection: "row", flexWrap: "wrap" },
+  plansCalendarWeekday: {
+    width: "14.2857%",
+    color: palette.muted,
+    fontSize: 8,
+    fontWeight: "900",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  plansCalendarDayCell: {
+    width: "14.2857%",
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  plansCalendarDay: {
+    width: 40,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  plansCalendarDayText: { fontSize: 11, fontWeight: "800" },
+  plansCalendarDayTextSelected: { color: palette.paper },
+  plansCalendarCount: {
+    position: "absolute",
+    right: 2,
+    bottom: 2,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
+    paddingHorizontal: 3,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  plansCalendarCountText: { fontSize: 7, fontWeight: "900" },
+  dayAgenda: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 15,
+    marginBottom: 27,
+  },
+  dayAgendaHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dayAgendaTitle: { fontSize: 14, fontWeight: "900" },
+  dayAgendaSubtitle: { color: palette.muted, fontSize: 9, marginTop: 3 },
+  todayBadge: {
+    minHeight: 24,
+    borderRadius: 12,
+    paddingHorizontal: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  todayBadgeText: { fontSize: 8, fontWeight: "900", letterSpacing: 0.7 },
+  dayAgendaEmpty: {
+    minHeight: 76,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 10,
+    paddingHorizontal: 5,
+  },
+  dayAgendaEmptyText: {
+    flex: 1,
+    color: palette.muted,
+    fontSize: 10,
+    lineHeight: 15,
+  },
+  dayAgendaItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    borderTopWidth: 1,
+    paddingTop: 13,
+    marginTop: 13,
+  },
+  dayAgendaCheck: {
+    width: 26,
+    height: 26,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  dayAgendaContent: { flex: 1 },
+  dayAgendaItemTitle: { fontSize: 12, fontWeight: "800" },
+  dayAgendaItemNote: { color: palette.muted, fontSize: 9, marginTop: 3 },
+  dayAgendaMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 7,
+  },
+  dayAgendaType: { fontSize: 8, fontWeight: "800" },
+  dayAgendaStatus: { fontSize: 8, fontWeight: "900", letterSpacing: 0.5 },
   planRow: {
     flexDirection: "row",
     alignItems: "center",
