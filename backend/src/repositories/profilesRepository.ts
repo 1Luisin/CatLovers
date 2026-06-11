@@ -30,7 +30,7 @@ export async function listProfiles() {
 export async function findProfile(id: string) {
   return (
     await query<ProfileRow>(
-      `SELECT ${columns} FROM profiles WHERE id = $1 OR code = $1`,
+      `SELECT ${columns} FROM profiles WHERE id::text = $1 OR code = $1`,
       [id],
     )
   ).rows[0];
@@ -87,7 +87,7 @@ export async function updateProfile(
   return (
     await query<ProfileRow>(
       `UPDATE profiles SET ${assignments.join(", ")}, updated_at = NOW()
-       WHERE id = $${values.length} OR code = $${values.length}
+       WHERE id::text = $${values.length} OR code = $${values.length}
        RETURNING ${columns}`,
       values,
     )
@@ -98,7 +98,7 @@ export async function updateProfilePhoto(id: string, photoUrl: string) {
   return (
     await query<ProfileRow>(
       `UPDATE profiles SET photo_url = $1, updated_at = NOW()
-       WHERE id = $2 OR code = $2 RETURNING ${columns}`,
+       WHERE id::text = $2 OR code = $2 RETURNING ${columns}`,
       [photoUrl, id],
     )
   ).rows[0];
