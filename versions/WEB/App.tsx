@@ -8,7 +8,6 @@ import {
   Animated,
   Easing,
   Image,
-  ImageSourcePropType,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -45,272 +44,38 @@ import {
   saveCachedMonthlyGoals,
   saveCachedProfiles,
 } from "../../src/services/storageService";
+import {
+  initialItems,
+  initialMonthlyGoals,
+  PLANS_MONTH_KEY,
+  PLANS_MONTH_LABEL,
+} from "../../src/data/constants";
+import { initialProfiles } from "../../src/data/initialProfiles";
+import {
+  characterImages,
+  palette,
+  themes,
+} from "../../src/theme/themes";
+import type {
+  AddMode,
+  Category,
+  CategoryFilter,
+  CollectionFilters,
+  CoupleItem,
+  IdeaType,
+  MemoryCategory,
+  MonthlyGoal,
+  Profile,
+  RatingFilter,
+  TabName as Tab,
+  ThemeName,
+  ThemePalette as AppTheme,
+} from "../../src/types";
 
-type Category = "Filme" | "Serie" | "Jogo" | "Role" | "Anime" | "Plano";
-type MemoryCategory = Exclude<Category, "Plano">;
-type IdeaType = MemoryCategory | "Outros";
-type Tab = "inicio" | "colecao" | "planos" | "perfil";
-type CategoryFilter = "Todos" | MemoryCategory;
-type RatingFilter = "Todas" | "Sem avaliacao" | 1 | 2 | 3 | 4 | 5;
-type CollectionFilters = {
-  category: CategoryFilter;
-  month: string | null;
-  rating: RatingFilter;
-};
-type AddMode = "memory" | "plan";
-type ThemeName = "Romance" | "Lavanda" | "Floresta" | "Noite" | "Cinnamoroll" | "Chococat";
-
-type AppTheme = {
-  accent: string;
-  accentSoft: string;
-  background: string;
-  surface: string;
-  border: string;
-  title: string;
-  muted: string;
-  heroColors: readonly [string, string];
-  label: string;
-  icon?: keyof typeof Ionicons.glyphMap;
-  isDark?: boolean;
-  character?: "Cinnamoroll" | "Chococat";
-};
-
-type Profile = {
-  id: string;
-  code?: string;
-  name: string;
-  birthDate: string;
-  bio: string;
-  photoUri?: string;
-  color: string;
-  theme: ThemeName;
-  notifications: boolean;
-  privateProfile?: boolean;
-  weeklyQuestion: boolean;
-};
-
-type CoupleItem = {
-  id: string;
-  title: string;
-  category: Category;
-  ideaType?: IdeaType;
-  note: string;
-  date: string;
-  occurredOn?: string;
-  plannedFor?: string;
-  completedOn?: string;
-  photoUri?: string;
-  done: boolean;
-  rating?: number;
-  color: string;
-  createdByProfileId?: string;
-};
-
-type MonthlyGoal = {
-  monthKey: string;
-  title: string;
-  description: string;
-};
-
-const STORAGE_KEY = "@catlovers/items";
-const PROFILES_KEY = "@catlovers/profiles";
-const MONTHLY_GOALS_KEY = "@catlovers/monthly-goals";
-const PLANS_MONTH_KEY = "2026-06";
-const PLANS_MONTH_LABEL = "Junho 2026";
 const defaultCollectionFilters: CollectionFilters = {
   category: "Todos",
   month: null,
   rating: "Todas",
-};
-
-const palette = {
-  ink: "#29242B",
-  muted: "#746C73",
-  cream: "#FCF8F4",
-  paper: "#FFFFFF",
-  blush: "#EF9B92",
-  rose: "#C65D6C",
-  lilac: "#A58AC7",
-  sage: "#7C9D8E",
-  apricot: "#EBA56E",
-  line: "#EDE4DE",
-};
-
-const characterImages: Record<
-  NonNullable<AppTheme["character"]>,
-  ImageSourcePropType
-> = {
-  Cinnamoroll: require("../../assets/themes/cinnamoroll.png"),
-  Chococat: require("../../assets/themes/chococat.png"),
-};
-
-const themes: Record<ThemeName, AppTheme> = {
-  Romance: {
-    accent: "#C65D6C",
-    accentSoft: "#F9E9E8",
-    background: "#FCF8F4",
-    surface: "#FFFFFF",
-    border: "#EDE4DE",
-    title: palette.ink,
-    muted: palette.muted,
-    heroColors: ["#D36A76", "#A77BC0"],
-    label: "Romance",
-    icon: "heart-outline",
-  },
-  Lavanda: {
-    accent: "#9175BA",
-    accentSoft: "#EEE8F7",
-    background: "#FAF7FD",
-    surface: "#FFFFFF",
-    border: "#E4DAEF",
-    title: palette.ink,
-    muted: "#746B7D",
-    heroColors: ["#A58AC7", "#C68BAD"],
-    label: "Lavanda",
-    icon: "flower-outline",
-  },
-  Floresta: {
-    accent: "#557D6B",
-    accentSoft: "#E3EFE9",
-    background: "#F6FAF7",
-    surface: "#FFFFFF",
-    border: "#D6E5DC",
-    title: "#26382F",
-    muted: "#66756D",
-    heroColors: ["#668E79", "#8DA978"],
-    label: "Floresta",
-    icon: "leaf-outline",
-  },
-  Noite: {
-    accent: "#B89BE8",
-    accentSoft: "#352D44",
-    background: "#18151D",
-    surface: "#25212B",
-    border: "#403848",
-    title: "#FFF8FC",
-    muted: "#BEB3BD",
-    heroColors: ["#514463", "#785B80"],
-    label: "Noite",
-    icon: "moon-outline",
-    isDark: true,
-  },
-  Cinnamoroll: {
-    accent: "#4BAFDF",
-    accentSoft: "#DFF4FF",
-    background: "#F3FBFF",
-    surface: "#FFFFFF",
-    border: "#CDEAF7",
-    title: palette.ink,
-    muted: "#667681",
-    heroColors: ["#62C5EE", "#8FAEEB"],
-    label: "Cinnamoroll",
-    character: "Cinnamoroll",
-  },
-  Chococat: {
-    accent: "#80563F",
-    accentSoft: "#F1E3D2",
-    background: "#FFF8EC",
-    surface: "#FFFCF6",
-    border: "#E6D1B8",
-    title: "#4A3026",
-    muted: "#78665B",
-    heroColors: ["#6A4636", "#A17B5D"],
-    label: "Chococat",
-    character: "Chococat",
-  },
-};
-
-function normalizeThemeName(theme: string): ThemeName {
-  if (theme === "Dark" || theme === "Noite") return "Noite";
-  if (theme === "Lavanda" || theme === "Floresta") return theme;
-  if (theme === "Cinnamoroll" || theme === "Chococat") return theme;
-  return "Romance";
-}
-
-const initialProfiles: Profile[] = [
-  {
-    id: "leticia",
-    name: "Letícia",
-    birthDate: "18/09/2003",
-    bio: "Apaixonada por histórias, café e pelos nossos domingos sem pressa.",
-    color: "#E9A29D",
-    theme: "Romance",
-    notifications: true,
-    weeklyQuestion: true,
-  },
-  {
-    id: "luis",
-    name: "Luis",
-    birthDate: "03/05/2001",
-    bio: "Jogos cooperativos, filmes longos e qualquer plano que seja a dois.",
-    color: "#9B8BC1",
-    theme: "Lavanda",
-    notifications: true,
-    weeklyQuestion: false,
-  },
-];
-
-const initialItems: CoupleItem[] = [
-  {
-    id: "1",
-    title: "Maratona de Severance",
-    category: "Serie",
-    note: "Dois episódios e sobremesa no sofá.",
-    date: "12 JUN",
-    done: true,
-    rating: 5,
-    color: palette.lilac,
-  },
-  {
-    id: "2",
-    title: "It Takes Two",
-    category: "Jogo",
-    note: "Terminamos o capítulo do jardim.",
-    date: "02 JUN",
-    done: true,
-    rating: 5,
-    color: palette.sage,
-  },
-  {
-    id: "3",
-    title: "Past Lives",
-    category: "Filme",
-    note: "Bonito, delicado e rendeu uma conversa enorme.",
-    date: "28 MAI",
-    done: true,
-    rating: 4,
-    color: palette.rose,
-  },
-  {
-    id: "4",
-    title: "Café novo no centro",
-    category: "Plano",
-    ideaType: "Role",
-    note: "Ir de manhã e caminhar pela livraria depois.",
-    date: "21 JUN",
-    plannedFor: "2026-06-21",
-    done: false,
-    color: palette.apricot,
-  },
-  {
-    id: "5",
-    title: "Noite sem celular",
-    category: "Plano",
-    ideaType: "Role",
-    note: "Jantar feito juntos e cartas na mesa.",
-    date: "27 JUN",
-    plannedFor: "2026-06-27",
-    done: false,
-    color: palette.blush,
-  },
-];
-
-const initialMonthlyGoals: Record<string, MonthlyGoal> = {
-  [PLANS_MONTH_KEY]: {
-    monthKey: PLANS_MONTH_KEY,
-    title: "Mais tempo para nós",
-    description: "Sem pressa. O importante é fazer caber na vida real.",
-  },
 };
 
 const categoryMeta: Record<
@@ -3297,21 +3062,12 @@ export default function App() {
           );
         }
         if (storedProfiles) {
-          const parsedProfiles = storedProfiles as unknown as Profile[];
           setProfiles(
-            parsedProfiles.map((profile) => {
-              const legacyProfile = profile as Profile & {
-                privateProfile?: boolean;
-              };
-              const { privateProfile: _privateProfile, ...profileData } =
-                legacyProfile;
-              return {
-                ...profileData,
+            storedProfiles.map((profile) => ({
+                ...profile,
                 name: correctLegacyText(profile.name),
                 bio: correctLegacyText(profile.bio),
-                theme: normalizeThemeName(profile.theme),
-              };
-            }),
+              })),
           );
         }
         if (storedMonthlyGoals) {
@@ -3325,11 +3081,7 @@ export default function App() {
         Promise.all([getProfiles(), getItems(), getMonthlyGoals()])
           .then(([remoteProfiles, remoteItems, remoteGoals]) => {
             if (remoteProfiles.length) {
-              const normalized = remoteProfiles.map((profile) => ({
-                ...profile,
-                theme: normalizeThemeName(profile.theme),
-              })) as unknown as Profile[];
-              setProfiles(normalized);
+              setProfiles(remoteProfiles);
               void saveCachedProfiles(remoteProfiles);
             }
             setItems(remoteItems as CoupleItem[]);
@@ -3347,7 +3099,7 @@ export default function App() {
   }, [items, loaded]);
 
   useEffect(() => {
-    if (loaded) void saveCachedProfiles(profiles as never);
+    if (loaded) void saveCachedProfiles(profiles);
   }, [loaded, profiles]);
 
   useEffect(() => {
@@ -3361,7 +3113,7 @@ export default function App() {
   const activeProfile = profiles.find(
     (profile) => profile.id === activeProfileId,
   );
-  const activeTheme = themes[activeProfile?.theme ?? "Romance"];
+  const activeTheme = themes[activeProfile?.theme ?? "Light"];
   const openAddModal = (mode: AddMode) => {
     setEditingMemory(undefined);
     setAddMode(mode);
@@ -3405,19 +3157,15 @@ export default function App() {
     );
     try {
       const saved = settingsOnly
-        ? await updateProfileSettings(updated.id, updated as never)
-        : await updateProfile(updated.id, updated as never);
+        ? await updateProfileSettings(updated.id, updated)
+        : await updateProfile(updated.id, updated);
       const withPhoto =
         updated.photoUri && !/^https?:\/\//.test(updated.photoUri)
           ? await uploadProfilePhoto(updated.id, { uri: updated.photoUri })
           : saved;
-      const normalized = {
-        ...withPhoto,
-        theme: normalizeThemeName(withPhoto.theme),
-      } as unknown as Profile;
       setProfiles((current) =>
         current.map((profile) =>
-          profile.id === normalized.id ? normalized : profile,
+          profile.id === withPhoto.id ? withPhoto : profile,
         ),
       );
     } catch {

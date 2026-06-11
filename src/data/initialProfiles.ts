@@ -1,4 +1,5 @@
 import type { Profile } from "../types";
+import { normalizeThemeName } from "../theme/themes";
 
 export const initialProfiles: Profile[] = [
   {
@@ -8,9 +9,8 @@ export const initialProfiles: Profile[] = [
     birthDate: "2003-09-18",
     bio: "Apaixonada por histórias, café e pelos nossos domingos sem pressa.",
     color: "#E9A29D",
-    theme: "Romance",
+    theme: normalizeThemeName("Cinnamoroll"),
     notifications: true,
-    privateProfile: true,
     weeklyQuestion: true,
   },
   {
@@ -20,9 +20,8 @@ export const initialProfiles: Profile[] = [
     birthDate: "2001-05-03",
     bio: "Jogos cooperativos, filmes longos e qualquer plano que seja a dois.",
     color: "#9B8BC1",
-    theme: "Lavanda",
+    theme: normalizeThemeName("Dark"),
     notifications: true,
-    privateProfile: true,
     weeklyQuestion: false,
   },
 ];

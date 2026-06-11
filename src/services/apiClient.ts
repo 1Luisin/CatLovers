@@ -22,7 +22,6 @@ type ApiProfile = {
   color: string | null;
   theme: string;
   notifications: boolean;
-  private_profile: boolean;
   weekly_question: boolean;
 };
 
@@ -121,10 +120,10 @@ const mapProfile = (profile: ApiProfile): Profile => ({
   birthDate: toDisplayDate(profile.birth_date),
   bio: profile.bio ?? "",
   photoUri: profile.photo_url ?? undefined,
+  photoUrl: profile.photo_url ?? undefined,
   color: profile.color ?? "#C65D6C",
   theme: normalizeThemeName(profile.theme),
   notifications: profile.notifications,
-  privateProfile: profile.private_profile,
   weeklyQuestion: profile.weekly_question,
 });
 
@@ -158,7 +157,6 @@ const profilePayload = (profile: Partial<Profile>) => ({
   color: profile.color,
   theme: normalizeThemeName(profile.theme),
   notifications: profile.notifications,
-  private_profile: profile.privateProfile,
   weekly_question: profile.weeklyQuestion,
 });
 
@@ -207,7 +205,6 @@ export const updateProfileSettings = async (
   payload: {
     theme?: ThemeName;
     notifications?: boolean;
-    privateProfile?: boolean;
     weeklyQuestion?: boolean;
   },
 ) =>

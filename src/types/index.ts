@@ -4,14 +4,7 @@ import type { Ionicons } from "@expo/vector-icons";
 export type Category = "Filme" | "Serie" | "Jogo" | "Role" | "Anime" | "Plano";
 export type MemoryCategory = Exclude<Category, "Plano">;
 export type IdeaType = MemoryCategory | "Outros";
-export type ThemeName =
-  | "Romance"
-  | "Lavanda"
-  | "Floresta"
-  | "Noite"
-  | "Cinnamoroll"
-  | "Chococat";
-export type LegacyThemeName = ThemeName | "Light" | "Dark";
+export type ThemeName = "Light" | "Dark" | "Cinnamoroll" | "Chococat";
 
 export type ThemePalette = {
   accent: string;
@@ -35,10 +28,10 @@ export type Profile = {
   birthDate: string;
   bio: string;
   photoUri?: string;
+  photoUrl?: string;
   color: string;
   theme: ThemeName;
   notifications: boolean;
-  privateProfile: boolean;
   weeklyQuestion: boolean;
 };
 

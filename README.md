@@ -165,8 +165,18 @@ confirme o registro em `profiles.photo_url` ou `item_photos`.
 
 ## Temas e regras preservadas
 
-Os temas compartilhados são Romance, Lavanda, Floresta, Noite, Cinnamoroll e
-Chococat. Valores antigos `Light` e `Dark` são normalizados.
+As únicas aparências disponíveis são:
+
+- Light;
+- Dark;
+- Cinnamoroll;
+- Chococat.
+
+Valores gravados por versões antigas são migrados automaticamente ao carregar
+o cache ou mapear respostas da API:
+
+- `Romance`, `Lavanda` e `Floresta` viram `Light`;
+- `Noite` vira `Dark`.
 
 - categoria `Plano` representa plano; as demais representam memória;
 - memórias nascem concluídas e podem ter avaliação e foto;
@@ -176,9 +186,15 @@ Chococat. Valores antigos `Light` e `Dark` são normalizados.
 - metas mensais usam `YYYY-MM`;
 - cada perfil mantém tema, foto e preferências próprias.
 
+A antiga opção de perfil privado foi removida. Memórias, planos e metas são
+dados compartilhados entre Luis e Letícia pela API e pelo banco. A escolha de
+perfil serve para selecionar identidade visual e preferências, não para criar
+uma área isolada ou autenticada.
+
 ## Limitações atuais
 
 - não há autenticação ou autorização; a API deve ficar em ambiente privado;
+- não há login, senha, JWT, cadastro de conta ou refresh token;
 - uploads usam o disco local do servidor, não armazenamento em nuvem;
 - não existe fila offline ou resolução de conflitos;
 - notificações e pergunta semanal continuam apenas como preferências;

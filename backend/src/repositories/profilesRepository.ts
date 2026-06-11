@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { query } from "../db.js";
+import { normalizeThemeName } from "../utils/theme.js";
 
 export type ProfileRow = {
   id: string;
@@ -12,7 +13,6 @@ export type ProfileRow = {
   color: string | null;
   theme: string;
   notifications: boolean;
-  private_profile: boolean;
   weekly_question: boolean;
   created_at: string;
   updated_at: string;
@@ -20,7 +20,7 @@ export type ProfileRow = {
 
 const columns = `
   id, user_id, code, name, birth_date, bio, photo_url, color, theme,
-  notifications, private_profile, weekly_question, created_at, updated_at
+  notifications, weekly_question, created_at, updated_at
 `;
 
 export async function listProfiles() {
@@ -41,8 +41,8 @@ export async function createProfile(body: Record<string, unknown>) {
     await query<ProfileRow>(
       `INSERT INTO profiles (
         id, user_id, code, name, birth_date, bio, photo_url, color, theme,
-        notifications, private_profile, weekly_question
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        notifications, weekly_question
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING ${columns}`,
       [
         randomUUID(),
@@ -53,9 +53,8 @@ export async function createProfile(body: Record<string, unknown>) {
         body.bio ?? null,
         body.photo_url ?? null,
         body.color ?? null,
-        body.theme ?? "Romance",
+        normalizeThemeName(body.theme),
         body.notifications ?? true,
-        body.private_profile ?? true,
         body.weekly_question ?? false,
       ],
     )
@@ -68,7 +67,7 @@ export async function updateProfile(
   settingsOnly = false,
 ) {
   const allowed = settingsOnly
-    ? ["theme", "notifications", "private_profile", "weekly_question"]
+    ? ["theme", "notifications", "weekly_question"]
     : [
         "name",
         "birth_date",
@@ -76,13 +75,14 @@ export async function updateProfile(
         "color",
         "theme",
         "notifications",
-        "private_profile",
         "weekly_question",
       ];
   const entries = allowed.filter((field) => body[field] !== undefined);
   if (!entries.length) return findProfile(id);
   const assignments = entries.map((field, index) => `${field} = $${index + 1}`);
-  const values = entries.map((field) => body[field]);
+  const values = entries.map((field) =>
+    field === "theme" ? normalizeThemeName(body[field]) : body[field],
+  );
   values.push(id);
   return (
     await query<ProfileRow>(

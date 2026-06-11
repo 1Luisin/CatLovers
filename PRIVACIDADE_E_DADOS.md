@@ -4,9 +4,9 @@
 
 ## 1. Escopo
 
-Este documento descreve como o CatLovers trata dados no protótipo atual e
-como deverá funcionar quando a integração com API, autenticação, banco de
-dados e armazenamento remoto for ativada.
+Este documento descreve como o CatLovers trata dados no aplicativo pessoal
+atual e quais proteções adicionais serão necessárias se ele for publicado
+fora do ambiente privado de Luis e Letícia.
 
 O documento deve ser revisado antes de uma publicação comercial. O canal de
 contato do responsável pelo tratamento também deve ser definido antes da
@@ -17,10 +17,11 @@ entrada em produção.
 O CatLovers pode tratar:
 
 - nome, data de nascimento, biografia e foto de perfil;
-- preferências do perfil e tema selecionado;
+- preferências do perfil e uma das aparências Light, Dark, Cinnamoroll ou
+  Chococat;
 - lembranças, descrições, categorias, datas, avaliações e imagens;
 - planos, datas previstas, datas de conclusão e metas mensais;
-- identificadores técnicos necessários para autenticação e sincronização;
+- identificadores técnicos necessários para sincronização;
 - registros técnicos de segurança, erros e acesso, quando implementados.
 
 O aplicativo não deve solicitar dados que não sejam necessários para suas
@@ -36,11 +37,16 @@ A entrada ainda ocorre apenas pela escolha de perfil. Não há autenticação,
 senha, JWT ou controle de autorização nesta etapa, portanto a API deve ser
 mantida em rede e ambiente privados.
 
-## 4. Integração futura com API e banco
+Memórias, planos, metas e fotos são dados compartilhados entre os perfis de
+Luis e Letícia. A antiga opção de perfil privado foi removida e não representa
+uma separação de acesso ou de dados.
 
-Quando a sincronização estiver ativa, os dados poderão ser transmitidos para a
-API e armazenados no banco de dados e no serviço de arquivos do CatLovers.
-Essa integração deverá:
+Valores antigos de aparência são migrados automaticamente: Romance, Lavanda e
+Floresta passam a Light, enquanto Noite passa a Dark.
+
+## 4. Segurança futura
+
+Se o aplicativo for publicado fora do ambiente pessoal, a API deverá:
 
 - usar conexão segura;
 - exigir autenticação e autorização;
@@ -54,7 +60,7 @@ Os dados serão usados para:
 
 - criar e manter os perfis;
 - sincronizar lembranças, planos e preferências entre dispositivos;
-- compartilhar os registros entre as pessoas vinculadas ao casal;
+- compartilhar os registros entre Luis e Letícia;
 - exibir calendários, metas, avaliações e histórico;
 - proteger a conta, investigar falhas e prevenir acesso indevido;
 - atender solicitações relacionadas aos dados.
@@ -68,8 +74,8 @@ infraestrutura, banco, armazenamento, autenticação, monitoramento e suporte.
 Esses fornecedores deverão receber apenas os dados necessários à atividade
 contratada e estar sujeitos a obrigações de segurança e confidencialidade.
 
-Os integrantes do casal vinculado poderão acessar os registros compartilhados
-da conta.
+Luis e Letícia podem acessar os registros compartilhados do casal. A escolha
+de perfil personaliza a experiência, mas não funciona como controle de acesso.
 
 ## 7. Retenção e exclusão
 
@@ -85,7 +91,7 @@ Quando a exclusão de conta for implementada, o fluxo deverá informar:
 
 ## 8. Segurança
 
-A versão conectada deverá adotar, no mínimo:
+Antes de uma publicação externa, a arquitetura deverá adotar, no mínimo:
 
 - comunicação HTTPS;
 - senhas armazenadas somente por mecanismo seguro de hash;

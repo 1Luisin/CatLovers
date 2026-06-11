@@ -8,7 +8,7 @@ const profiles = [
     birthDate: "2003-09-18",
     bio: "Apaixonada por histórias, café e pelos nossos domingos sem pressa.",
     color: "#E9A29D",
-    theme: "Romance",
+    theme: "Cinnamoroll",
     weeklyQuestion: true,
   },
   {
@@ -17,7 +17,7 @@ const profiles = [
     birthDate: "2001-05-03",
     bio: "Jogos cooperativos, filmes longos e qualquer plano que seja a dois.",
     color: "#9B8BC1",
-    theme: "Lavanda",
+    theme: "Dark",
     weeklyQuestion: false,
   },
 ];
@@ -27,8 +27,8 @@ try {
     await pool.query(
       `INSERT INTO profiles (
         id, user_id, code, name, birth_date, bio, color, theme,
-        notifications, private_profile, weekly_question
-      ) VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, TRUE, TRUE, $8)
+        notifications, weekly_question
+      ) VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, TRUE, $8)
       ON CONFLICT (code) DO NOTHING`,
       [
         randomUUID(),

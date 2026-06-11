@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { CoupleItem, MonthlyGoal, Profile } from "../types";
+import { normalizeThemeName } from "../theme/themes";
 
 const KEYS = {
   items: "@catlovers/items",
@@ -21,9 +22,44 @@ async function loadJson<T>(key: string): Promise<T | null> {
 const saveJson = (key: string, value: unknown) =>
   AsyncStorage.setItem(key, JSON.stringify(value));
 
-export const loadCachedProfiles = () => loadJson<Profile[]>(KEYS.profiles);
+type CachedProfile = Partial<Profile> & {
+  id?: string;
+  code?: string;
+};
+
+function sanitizeProfile(profile: CachedProfile): Profile | null {
+  if (!profile.id || !profile.name) return null;
+  const photoUri = profile.photoUri ?? profile.photoUrl;
+  return {
+    id: profile.id,
+    code: profile.code ?? profile.id,
+    name: profile.name,
+    birthDate: profile.birthDate ?? "",
+    bio: profile.bio ?? "",
+    ...(photoUri ? { photoUri, photoUrl: profile.photoUrl } : {}),
+    color: profile.color ?? "#C65D6C",
+    theme: normalizeThemeName(profile.theme),
+    notifications: profile.notifications ?? true,
+    weeklyQuestion: profile.weeklyQuestion ?? false,
+  };
+}
+
+export async function loadCachedProfiles() {
+  const profiles = await loadJson<CachedProfile[]>(KEYS.profiles);
+  return profiles
+    ? profiles
+        .map(sanitizeProfile)
+        .filter((profile): profile is Profile => profile !== null)
+    : null;
+}
+
 export const saveCachedProfiles = (profiles: Profile[]) =>
-  saveJson(KEYS.profiles, profiles);
+  saveJson(
+    KEYS.profiles,
+    profiles
+      .map(sanitizeProfile)
+      .filter((profile): profile is Profile => profile !== null),
+  );
 export const loadCachedItems = () => loadJson<CoupleItem[]>(KEYS.items);
 export const saveCachedItems = (items: CoupleItem[]) =>
   saveJson(KEYS.items, items);
