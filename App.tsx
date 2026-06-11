@@ -2935,7 +2935,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   monthLabel: {
-    color: palette.blush,
+    color: palette.paper,
     fontSize: 9,
     letterSpacing: 1.4,
     fontWeight: "800",
