@@ -177,9 +177,9 @@ const themes: Record<ThemeName, AppTheme> = {
 const initialProfiles: Profile[] = [
   {
     id: "leticia",
-    name: "Leticia",
+    name: "Letícia",
     birthDate: "18/09/2003",
-    bio: "Apaixonada por historias, cafe e pelos nossos domingos sem pressa.",
+    bio: "Apaixonada por histórias, café e pelos nossos domingos sem pressa.",
     color: "#E9A29D",
     theme: "Romance",
     notifications: true,
@@ -204,7 +204,7 @@ const initialItems: CoupleItem[] = [
     id: "1",
     title: "Maratona de Severance",
     category: "Serie",
-    note: "Dois episodios e sobremesa no sofa.",
+    note: "Dois episódios e sobremesa no sofá.",
     date: "12 JUN",
     done: true,
     rating: 5,
@@ -214,7 +214,7 @@ const initialItems: CoupleItem[] = [
     id: "2",
     title: "It Takes Two",
     category: "Jogo",
-    note: "Terminamos o capitulo do jardim.",
+    note: "Terminamos o capítulo do jardim.",
     date: "02 JUN",
     done: true,
     rating: 5,
@@ -232,9 +232,9 @@ const initialItems: CoupleItem[] = [
   },
   {
     id: "4",
-    title: "Cafe novo no centro",
+    title: "Café novo no centro",
     category: "Plano",
-    note: "Ir de manha e caminhar pela livraria depois.",
+    note: "Ir de manhã e caminhar pela livraria depois.",
     date: "21 JUN",
     done: false,
     color: palette.apricot,
@@ -255,7 +255,7 @@ const categoryMeta: Record<
   { icon: keyof typeof Ionicons.glyphMap; color: string; label: string }
 > = {
   Filme: { icon: "film-outline", color: palette.rose, label: "Filme" },
-  Serie: { icon: "tv-outline", color: palette.lilac, label: "Serie" },
+  Serie: { icon: "tv-outline", color: palette.lilac, label: "Série" },
   Jogo: { icon: "game-controller-outline", color: palette.sage, label: "Jogo" },
   Role: { icon: "location-outline", color: "#D48A62", label: "Rolê" },
   Anime: { icon: "sparkles-outline", color: "#7D78B8", label: "Anime" },
@@ -265,7 +265,7 @@ const categoryMeta: Record<
 const monthNames = [
   "Janeiro",
   "Fevereiro",
-  "Marco",
+  "Março",
   "Abril",
   "Maio",
   "Junho",
@@ -304,6 +304,21 @@ function toIsoDate(date: Date) {
 function fromIsoDate(value: string) {
   const [year, month, day] = value.split("-").map(Number);
   return new Date(year, month - 1, day);
+}
+
+const legacyTextCorrections: Record<string, string> = {
+  Leticia: "Letícia",
+  "Apaixonada por historias, cafe e pelos nossos domingos sem pressa.":
+    "Apaixonada por histórias, café e pelos nossos domingos sem pressa.",
+  "Dois episodios e sobremesa no sofa.": "Dois episódios e sobremesa no sofá.",
+  "Terminamos o capitulo do jardim.": "Terminamos o capítulo do jardim.",
+  "Cafe novo no centro": "Café novo no centro",
+  "Ir de manha e caminhar pela livraria depois.":
+    "Ir de manhã e caminhar pela livraria depois.",
+};
+
+function correctLegacyText(value: string) {
+  return legacyTextCorrections[value] ?? value;
 }
 
 function formatFullDate(value: string) {
@@ -348,10 +363,10 @@ const tabs: Array<{
   icon: keyof typeof Ionicons.glyphMap;
   activeIcon: keyof typeof Ionicons.glyphMap;
 }> = [
-  { key: "inicio", label: "Inicio", icon: "home-outline", activeIcon: "home" },
+  { key: "inicio", label: "Início", icon: "home-outline", activeIcon: "home" },
   {
     key: "colecao",
-    label: "Colecao",
+    label: "Coleção",
     icon: "albums-outline",
     activeIcon: "albums",
   },
@@ -471,9 +486,9 @@ function ProfileGate({
       </View>
 
       <View style={styles.gateContent}>
-        <Text style={styles.gateTitle}>Quem esta entrando?</Text>
+        <Text style={styles.gateTitle}>Quem está entrando?</Text>
         <Text style={styles.gateSubtitle}>
-          Escolha seu perfil. Aqui nao tem senha, so o nosso espaco compartilhado.
+          Escolha seu perfil. Aqui não tem senha, só o nosso espaço compartilhado.
         </Text>
         <View style={styles.profileChoices}>
           {profiles.map((profile) => (
@@ -595,7 +610,7 @@ function MemoryCard({
               ))}
             </View>
           ) : (
-            <Text style={styles.memorySavedText}>Lembranca guardada</Text>
+            <Text style={styles.memorySavedText}>Lembrança guardada</Text>
           )}
         </View>
       </View>
@@ -637,10 +652,10 @@ function HomeScreen({
       >
         <View style={styles.heroDecorationOne} />
         <View style={styles.heroDecorationTwo} />
-        <Text style={styles.heroKicker}>NOSSO PROXIMO MOMENTO</Text>
+        <Text style={styles.heroKicker}>NOSSO PRÓXIMO MOMENTO</Text>
         <Text style={styles.heroTitle}>{nextPlan?.title ?? "Criar um novo plano"}</Text>
         <Text style={styles.heroNote}>
-          {nextPlan?.note ?? "Uma ideia simples pode virar uma memoria favorita."}
+          {nextPlan?.note ?? "Uma ideia simples pode virar uma memória favorita."}
         </Text>
         <View style={styles.heroFooter}>
           <View style={styles.avatarStack}>
@@ -670,7 +685,7 @@ function HomeScreen({
             JUNHO
           </Text>
           <Text style={[styles.sectionTitle, { color: theme.title }]}>
-            Nosso mes
+            Nosso mês
           </Text>
         </View>
         <View
@@ -709,7 +724,7 @@ function HomeScreen({
 
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: theme.title }]}>
-          Ultimas memorias
+          Últimas memórias
         </Text>
         <Pressable onPress={onViewAll}>
           <Text style={[styles.linkText, { color: theme.accent }]}>
@@ -773,10 +788,10 @@ function CollectionFilterModal({
           <View style={styles.modalHeader}>
             <View>
               <Text style={[styles.modalEyebrow, { color: theme.accent }]}>
-                ORGANIZAR COLECAO
+                ORGANIZAR COLEÇÃO
               </Text>
               <Text style={[styles.modalTitle, { color: theme.title }]}>
-                Filtrar lembrancas
+                Filtrar lembranças
               </Text>
             </View>
             <Pressable
@@ -806,7 +821,7 @@ function CollectionFilterModal({
                   Categoria
                 </Text>
                 <Text style={styles.filterSectionHint}>
-                  Escolha um tipo de lembranca
+                  Escolha um tipo de lembrança
                 </Text>
               </View>
             </View>
@@ -864,7 +879,7 @@ function CollectionFilterModal({
                   Data
                 </Text>
                 <Text style={styles.filterSectionHint}>
-                  Mostre lembrancas de um mes
+                  Mostre lembranças de um mês
                 </Text>
               </View>
             </View>
@@ -950,7 +965,7 @@ function CollectionFilterModal({
               </View>
               <View>
                 <Text style={[styles.filterSectionTitle, { color: theme.title }]}>
-                  Avaliacao
+                  Avaliação
                 </Text>
                 <Text style={styles.filterSectionHint}>
                   Filtre pela quantidade exata de estrelas
@@ -1006,7 +1021,7 @@ function CollectionFilterModal({
                             },
                           ]}
                         >
-                          {rating === "Todas" ? "Todas as notas" : "Sem avaliacao"}
+                          {rating === "Todas" ? "Todas as notas" : "Sem avaliação"}
                         </Text>
                       </View>
                     )}
@@ -1093,7 +1108,7 @@ function CollectionScreen({
     filters.rating === "Todas"
       ? null
       : filters.rating === "Sem avaliacao"
-        ? "Sem avaliacao"
+        ? "Sem avaliação"
         : `${filters.rating} ${
             filters.rating === 1 ? "estrela" : "estrelas"
           }`,
@@ -1119,12 +1134,12 @@ function CollectionScreen({
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <AppHeader
           eyebrow="TUDO QUE VIVEMOS"
-          title="Nossa colecao"
+          title="Nossa coleção"
           onAdd={onAdd}
           theme={theme}
         />
         <Text style={styles.introText}>
-          O nosso pequeno arquivo de historias, partidas e maratonas.
+          O nosso pequeno arquivo de histórias, partidas e maratonas.
         </Text>
         <View style={styles.collectionFilterToolbar}>
           <View>
@@ -1136,7 +1151,7 @@ function CollectionScreen({
                 ? `${activeFilterCount} ${
                     activeFilterCount === 1 ? "filtro ativo" : "filtros ativos"
                   }`
-                : "Mostrando toda a colecao"}
+                : "Mostrando toda a coleção"}
             </Text>
           </View>
           <Pressable
@@ -1243,7 +1258,7 @@ function CollectionScreen({
           <View style={styles.emptyState}>
             <Ionicons name="search-outline" size={36} color={theme.accent} />
             <Text style={[styles.emptyTitle, { color: theme.title }]}>
-              Nenhuma lembranca encontrada
+              Nenhuma lembrança encontrada
             </Text>
             <Text style={styles.emptyText}>
               Ajuste ou limpe os filtros para ver outros registros.
@@ -1292,8 +1307,8 @@ function PlansScreen({
       <LinearGradient colors={theme.heroColors} style={styles.monthCard}>
         <View style={styles.monthTop}>
           <View>
-            <Text style={styles.monthLabel}>META DO MES</Text>
-            <Text style={styles.monthTitle}>Mais tempo para nos</Text>
+            <Text style={styles.monthLabel}>META DO MÊS</Text>
+            <Text style={styles.monthTitle}>Mais tempo para nós</Text>
           </View>
           <Text style={styles.monthProgress}>
             {done}/{plans.length}
@@ -1303,7 +1318,7 @@ function PlansScreen({
           <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
         <Text style={styles.monthHint}>
-          Sem pressa. O importante e fazer caber na vida real.
+          Sem pressa. O importante é fazer caber na vida real.
         </Text>
       </LinearGradient>
 
@@ -1477,7 +1492,7 @@ function ProfileScreen({
           <Text style={[styles.profileStatValue, { color: theme.title }]}>
             {completed}
           </Text>
-          <Text style={styles.profileStatLabel}>memorias</Text>
+          <Text style={styles.profileStatLabel}>memórias</Text>
         </View>
         <View style={styles.profileStatDivider} />
         <View style={styles.profileStat}>
@@ -1496,7 +1511,7 @@ function ProfileScreen({
       </View>
 
       <Text style={[styles.settingsSectionTitle, { color: theme.title }]}>
-        Aparencia
+        Aparência
       </Text>
       <View
         style={[
@@ -1565,7 +1580,7 @@ function ProfileScreen({
       </View>
 
       <Text style={[styles.settingsSectionTitle, { color: theme.title }]}>
-        Preferencias
+        Preferências
       </Text>
       <View
         style={[
@@ -1576,7 +1591,7 @@ function ProfileScreen({
         <SettingSwitch
           icon="notifications-outline"
           label="Lembretes do casal"
-          description="Planos proximos e datas especiais"
+          description="Planos próximos e datas especiais"
           value={profile.notifications}
           accent={accent}
           titleColor={theme.title}
@@ -1624,7 +1639,7 @@ function ProfileScreen({
             <Text style={[styles.settingLabel, { color: theme.title }]}>
               Sobre o aplicativo
             </Text>
-            <Text style={styles.settingDescription}>Versao 1.1.0</Text>
+            <Text style={styles.settingDescription}>Versão 1.1.0</Text>
           </View>
           <Ionicons
             name={aboutVisible ? "chevron-up" : "chevron-forward"}
@@ -1635,8 +1650,8 @@ function ProfileScreen({
         {aboutVisible && (
           <View style={styles.aboutBox}>
             <Text style={styles.aboutText}>
-              CatLovers e o cantinho de Leticia e Luis para guardar historias,
-              escolher o proximo filme e transformar planos simples em memoria.
+              CatLovers é o cantinho de Letícia e Luis para guardar histórias,
+              escolher o próximo filme e transformar planos simples em memória.
             </Text>
             <Text style={[styles.aboutSignature, { color: accent }]}>
               Feito com carinho para dois.
@@ -1648,7 +1663,7 @@ function ProfileScreen({
           onPress={() =>
             Alert.alert(
               "Seus dados",
-              "Perfis, preferencias e registros sao armazenados localmente neste aparelho.",
+              "Perfis, preferências e registros são armazenados localmente neste aparelho.",
             )
           }
           style={styles.actionSettingRow}
@@ -1699,8 +1714,8 @@ function EditProfileModal({
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(
-        "Permissao necessaria",
-        "Permita o acesso as fotos para escolher uma imagem de perfil.",
+        "Permissão necessária",
+        "Permita o acesso às fotos para escolher uma imagem de perfil.",
       );
       return;
     }
@@ -1733,7 +1748,7 @@ function EditProfileModal({
             <Pressable
               onPress={() => {
                 if (!draft.name.trim()) {
-                  Alert.alert("Nome obrigatorio", "Informe o nome do perfil.");
+                  Alert.alert("Nome obrigatório", "Informe o nome do perfil.");
                   return;
                 }
                 onSave({ ...draft, name: draft.name.trim() });
@@ -1776,7 +1791,7 @@ function EditProfileModal({
               value={draft.bio}
               onChangeText={(bio) => setDraft({ ...draft, bio })}
               style={[styles.input, styles.profileBioInput]}
-              placeholder="Conte um pouco sobre voce"
+              placeholder="Conte um pouco sobre você"
               placeholderTextColor="#AFA4AA"
               multiline
               maxLength={180}
@@ -1938,8 +1953,8 @@ function AddModal({
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(
-        "Permissao necessaria",
-        "Permita o acesso as fotos para escolher uma imagem da lembranca.",
+        "Permissão necessária",
+        "Permita o acesso às fotos para escolher uma imagem da lembrança.",
       );
       return;
     }
@@ -1954,8 +1969,8 @@ function AddModal({
   const save = () => {
     if (!title.trim()) {
       Alert.alert(
-        "Falta um titulo",
-        isPlan ? "De um nome para esse plano." : "De um nome para essa lembranca.",
+        "Falta um título",
+        isPlan ? "Dê um nome para esse plano." : "Dê um nome para essa lembrança.",
       );
       return;
     }
@@ -1967,7 +1982,7 @@ function AddModal({
         note.trim() ||
         (isPlan
           ? "Um novo momento para viver juntos."
-          : "Uma lembranca especial guardada juntos."),
+          : "Uma lembrança especial guardada juntos."),
       category: savedCategory,
       date: isPlan ? "30 JUN" : formatCardDate(selectedDate),
       occurredOn: isPlan ? undefined : selectedDate,
@@ -1995,7 +2010,7 @@ function AddModal({
                 {isPlan ? "PLANEJAR JUNTOS" : "GUARDAR JUNTOS"}
               </Text>
               <Text style={[styles.modalTitle, { color: theme.title }]}>
-                {isPlan ? "Novo plano" : "Nova lembranca"}
+                {isPlan ? "Novo plano" : "Nova lembrança"}
               </Text>
             </View>
             <Pressable
@@ -2015,7 +2030,7 @@ function AddModal({
           {!isPlan && (
             <>
               <Text style={[styles.inputLabel, { color: theme.title }]}>
-                Que lembranca vamos guardar?
+                Que lembrança vamos guardar?
               </Text>
               <View style={styles.categoryGrid}>
                 {memoryCategories.map((item) => {
@@ -2102,11 +2117,11 @@ function AddModal({
             </>
           )}
 
-          <Text style={[styles.inputLabel, { color: theme.title }]}>Titulo</Text>
+          <Text style={[styles.inputLabel, { color: theme.title }]}>Título</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder={isPlan ? "Ex.: Conhecer um cafe novo" : "Ex.: Cinema na sexta"}
+            placeholder={isPlan ? "Ex.: Conhecer um café novo" : "Ex.: Cinema na sexta"}
             placeholderTextColor="#AFA4AA"
             style={[
               styles.input,
@@ -2125,7 +2140,7 @@ function AddModal({
             onChangeText={setNote}
             placeholder={
               isPlan
-                ? "O que voces querem fazer?"
+                ? "O que vocês querem fazer?"
                 : "O que tornou esse momento nosso?"
             }
             placeholderTextColor="#AFA4AA"
@@ -2144,7 +2159,7 @@ function AddModal({
           {!isPlan && (
             <>
               <Text style={[styles.inputLabel, { color: theme.title }]}>
-                Quantas estrelas essa lembranca merece?
+                Quantas estrelas essa lembrança merece?
               </Text>
               <View
                 style={[
@@ -2180,7 +2195,7 @@ function AddModal({
                 <View style={styles.ratingPickerFooter}>
                   <Text style={styles.ratingPickerText}>
                     {rating === 0
-                      ? "Sem avaliacao"
+                      ? "Sem avaliação"
                       : `${rating} ${rating === 1 ? "estrela" : "estrelas"}`}
                   </Text>
                   {rating > 0 && (
@@ -2194,7 +2209,7 @@ function AddModal({
               </View>
 
               <Text style={[styles.inputLabel, { color: theme.title }]}>
-                Foto da lembranca
+                Foto da lembrança
               </Text>
               {photoUri ? (
                 <View
@@ -2276,7 +2291,7 @@ function AddModal({
               style={styles.saveGradient}
             >
               <Text style={styles.saveButtonText}>
-                {isPlan ? "Adicionar aos planos" : "Guardar lembranca"}
+                {isPlan ? "Adicionar aos planos" : "Guardar lembrança"}
               </Text>
               <Ionicons
                 name={isPlan ? "calendar" : "heart"}
@@ -2317,12 +2332,24 @@ export default function App() {
         if (storedItems) {
           const parsedItems = JSON.parse(storedItems) as CoupleItem[];
           setItems(
-            parsedItems.map((item) =>
-              item.category === "Plano" ? item : { ...item, done: true },
-            ),
+            parsedItems.map((item) => ({
+              ...item,
+              title: correctLegacyText(item.title),
+              note: correctLegacyText(item.note),
+              done: item.category === "Plano" ? item.done : true,
+            })),
           );
         }
-        if (storedProfiles) setProfiles(JSON.parse(storedProfiles));
+        if (storedProfiles) {
+          const parsedProfiles = JSON.parse(storedProfiles) as Profile[];
+          setProfiles(
+            parsedProfiles.map((profile) => ({
+              ...profile,
+              name: correctLegacyText(profile.name),
+              bio: correctLegacyText(profile.bio),
+            })),
+          );
+        }
       })
       .catch(() => undefined)
       .finally(() => setLoaded(true));
