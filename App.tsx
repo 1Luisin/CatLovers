@@ -35,13 +35,7 @@ type CollectionFilters = {
   rating: RatingFilter;
 };
 type AddMode = "memory" | "plan";
-type ThemeName =
-  | "Romance"
-  | "Lavanda"
-  | "Floresta"
-  | "Noite"
-  | "Cinnamoroll"
-  | "Chococat";
+type ThemeName = "Light" | "Dark" | "Cinnamoroll" | "Chococat";
 
 type AppTheme = {
   accent: string;
@@ -50,8 +44,11 @@ type AppTheme = {
   surface: string;
   border: string;
   title: string;
+  muted: string;
   heroColors: readonly [string, string];
   label: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  isDark?: boolean;
   character?: "Cinnamoroll" | "Chococat";
 };
 
@@ -64,7 +61,6 @@ type Profile = {
   color: string;
   theme: ThemeName;
   notifications: boolean;
-  privateProfile: boolean;
   weeklyQuestion: boolean;
 };
 
@@ -123,45 +119,30 @@ const characterImages: Record<
 };
 
 const themes: Record<ThemeName, AppTheme> = {
-  Romance: {
+  Light: {
     accent: "#C65D6C",
     accentSoft: "#F9E9E8",
     background: "#FCF8F4",
     surface: "#FFFFFF",
     border: "#EDE4DE",
     title: palette.ink,
+    muted: palette.muted,
     heroColors: ["#D36A76", "#A77BC0"],
-    label: "Romance",
+    label: "Light mode",
+    icon: "sunny-outline",
   },
-  Lavanda: {
-    accent: "#8B6FAE",
-    accentSoft: "#F0EAF6",
-    background: "#FAF8FC",
-    surface: "#FFFDFF",
-    border: "#E9E1F0",
-    title: palette.ink,
-    heroColors: ["#9B82BC", "#C7A8D8"],
-    label: "Lavanda",
-  },
-  Floresta: {
-    accent: "#527B68",
-    accentSoft: "#E7F0EB",
-    background: "#F7FAF8",
-    surface: "#FEFFFE",
-    border: "#DDE9E2",
-    title: palette.ink,
-    heroColors: ["#56806C", "#89A995"],
-    label: "Floresta",
-  },
-  Noite: {
-    accent: "#655D9A",
-    accentSoft: "#EAE8F4",
-    background: "#F6F5FA",
-    surface: "#FDFDFF",
-    border: "#E2E0ED",
-    title: palette.ink,
-    heroColors: ["#544D83", "#8279B6"],
-    label: "Noite",
+  Dark: {
+    accent: "#B89BE8",
+    accentSoft: "#352D44",
+    background: "#18151D",
+    surface: "#25212B",
+    border: "#403848",
+    title: "#FFF8FC",
+    muted: "#BEB3BD",
+    heroColors: ["#514463", "#785B80"],
+    label: "Dark mode",
+    icon: "moon-outline",
+    isDark: true,
   },
   Cinnamoroll: {
     accent: "#4BAFDF",
@@ -170,6 +151,7 @@ const themes: Record<ThemeName, AppTheme> = {
     surface: "#FFFFFF",
     border: "#CDEAF7",
     title: palette.ink,
+    muted: "#667681",
     heroColors: ["#62C5EE", "#8FAEEB"],
     label: "Cinnamoroll",
     character: "Cinnamoroll",
@@ -181,11 +163,18 @@ const themes: Record<ThemeName, AppTheme> = {
     surface: "#FFFCF6",
     border: "#E6D1B8",
     title: "#4A3026",
+    muted: "#78665B",
     heroColors: ["#6A4636", "#A17B5D"],
     label: "Chococat",
     character: "Chococat",
   },
 };
+
+function normalizeThemeName(theme: string): ThemeName {
+  if (theme === "Dark" || theme === "Noite") return "Dark";
+  if (theme === "Cinnamoroll" || theme === "Chococat") return theme;
+  return "Light";
+}
 
 const initialProfiles: Profile[] = [
   {
@@ -194,9 +183,8 @@ const initialProfiles: Profile[] = [
     birthDate: "18/09/2003",
     bio: "Apaixonada por histórias, café e pelos nossos domingos sem pressa.",
     color: "#E9A29D",
-    theme: "Romance",
+    theme: "Light",
     notifications: true,
-    privateProfile: true,
     weeklyQuestion: true,
   },
   {
@@ -205,9 +193,8 @@ const initialProfiles: Profile[] = [
     birthDate: "03/05/2001",
     bio: "Jogos cooperativos, filmes longos e qualquer plano que seja a dois.",
     color: "#9B8BC1",
-    theme: "Lavanda",
+    theme: "Light",
     notifications: true,
-    privateProfile: true,
     weeklyQuestion: false,
   },
 ];
@@ -651,7 +638,9 @@ function MemoryCard({
         <View style={styles.memoryTop}>
           <CategoryPill category={item.category} />
           <View style={styles.memoryTopActions}>
-            <Text style={styles.dateText}>{item.date}</Text>
+            <Text style={[styles.dateText, { color: theme.muted }]}>
+              {item.date}
+            </Text>
             {onEdit && (
               <Pressable
                 accessibilityLabel={`Editar ${item.title}`}
@@ -677,7 +666,10 @@ function MemoryCard({
         <Text style={[styles.memoryTitle, { color: theme.title }]}>
           {item.title}
         </Text>
-        <Text style={styles.memoryNote} numberOfLines={2}>
+        <Text
+          style={[styles.memoryNote, { color: theme.muted }]}
+          numberOfLines={2}
+        >
           {item.note}
         </Text>
         {item.photoUri && (
@@ -700,7 +692,9 @@ function MemoryCard({
               ))}
             </View>
           ) : (
-            <Text style={styles.memorySavedText}>Lembrança guardada</Text>
+            <Text style={[styles.memorySavedText, { color: theme.muted }]}>
+              Lembrança guardada
+            </Text>
           )}
         </View>
       </View>
@@ -795,8 +789,12 @@ function HomeScreen({
           ]}
         >
           <Ionicons name="sparkles-outline" size={20} color={theme.accent} />
-          <Text style={styles.statValue}>{items.length}</Text>
-          <Text style={styles.statLabel}>momentos salvos</Text>
+          <Text style={[styles.statValue, { color: theme.title }]}>
+            {items.length}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.muted }]}>
+            momentos salvos
+          </Text>
         </View>
         <View
           style={[
@@ -805,10 +803,12 @@ function HomeScreen({
           ]}
         >
           <Ionicons name="time-outline" size={21} color={theme.accent} />
-          <Text style={styles.statValue}>
+          <Text style={[styles.statValue, { color: theme.title }]}>
             {items.filter((item) => !item.done).length}
           </Text>
-          <Text style={styles.statLabel}>ideias esperando</Text>
+          <Text style={[styles.statLabel, { color: theme.muted }]}>
+            ideias esperando
+          </Text>
         </View>
       </View>
 
@@ -1230,15 +1230,15 @@ function CollectionScreen({
           onAdd={onAdd}
           theme={theme}
         />
-        <Text style={styles.introText}>
+        <Text style={[styles.introText, { color: theme.muted }]}>
           O nosso pequeno arquivo de histórias, partidas e maratonas.
         </Text>
         <View style={styles.collectionFilterToolbar}>
           <View>
-            <Text style={styles.resultCount}>
+            <Text style={[styles.resultCount, { color: theme.muted }]}>
               {visible.length} {visible.length === 1 ? "registro" : "registros"}
             </Text>
-            <Text style={styles.collectionFilterHint}>
+            <Text style={[styles.collectionFilterHint, { color: theme.muted }]}>
               {activeFilterCount
                 ? `${activeFilterCount} ${
                     activeFilterCount === 1 ? "filtro ativo" : "filtros ativos"
@@ -1357,7 +1357,7 @@ function CollectionScreen({
             <Text style={[styles.emptyTitle, { color: theme.title }]}>
               Nenhuma lembrança encontrada
             </Text>
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyText, { color: theme.muted }]}>
               Ajuste ou limpe os filtros para ver outros registros.
             </Text>
           </View>
@@ -1458,7 +1458,7 @@ function MonthlyGoalModal({
             </Pressable>
           </View>
 
-          <Text style={[styles.goalModalIntro, { color: palette.muted }]}>
+          <Text style={[styles.goalModalIntro, { color: theme.muted }]}>
             Cada mês pode ter uma única meta compartilhada.
           </Text>
 
@@ -1652,7 +1652,9 @@ function PlansScreen({
             <Text style={[styles.plansCalendarMonth, { color: theme.title }]}>
               {monthNames[calendarMonth]} {calendarYear}
             </Text>
-            <Text style={styles.plansCalendarSubtitle}>
+            <Text
+              style={[styles.plansCalendarSubtitle, { color: theme.muted }]}
+            >
               Toque em um dia para ver os planos
             </Text>
           </View>
@@ -1670,7 +1672,10 @@ function PlansScreen({
 
         <View style={styles.plansCalendarGrid}>
           {calendarWeekdayLabels.map((label) => (
-            <Text key={label} style={styles.plansCalendarWeekday}>
+            <Text
+              key={label}
+              style={[styles.plansCalendarWeekday, { color: theme.muted }]}
+            >
               {label}
             </Text>
           ))}
@@ -1761,7 +1766,7 @@ function PlansScreen({
             <Text style={[styles.dayAgendaTitle, { color: theme.title }]}>
               {selectedDateLabel}
             </Text>
-            <Text style={styles.dayAgendaSubtitle}>
+            <Text style={[styles.dayAgendaSubtitle, { color: theme.muted }]}>
               {selectedPlans.length === 0
                 ? "Nenhum plano para este dia"
                 : `${selectedPlans.length} ${
@@ -1790,7 +1795,7 @@ function PlansScreen({
               size={24}
               color={theme.accent}
             />
-            <Text style={styles.dayAgendaEmptyText}>
+            <Text style={[styles.dayAgendaEmptyText, { color: theme.muted }]}>
               Os planos previstos ou concluídos nesta data aparecerão aqui.
             </Text>
           </View>
@@ -1833,7 +1838,11 @@ function PlansScreen({
                   >
                     {item.title}
                   </Text>
-                  <Text style={styles.dayAgendaItemNote}>{item.note}</Text>
+                  <Text
+                    style={[styles.dayAgendaItemNote, { color: theme.muted }]}
+                  >
+                    {item.note}
+                  </Text>
                   <View style={styles.dayAgendaMeta}>
                     {ideaMeta && (
                       <Text
@@ -1898,7 +1907,9 @@ function PlansScreen({
               >
                 {item.title}
               </Text>
-              <Text style={styles.planNote}>{item.note}</Text>
+              <Text style={[styles.planNote, { color: theme.muted }]}>
+                {item.note}
+              </Text>
               {ideaMeta && (
                 <View
                   style={[
@@ -1953,6 +1964,7 @@ function SettingSwitch({
   value,
   accent,
   titleColor,
+  descriptionColor,
   onChange,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
@@ -1961,6 +1973,7 @@ function SettingSwitch({
   value: boolean;
   accent: string;
   titleColor: string;
+  descriptionColor: string;
   onChange: (value: boolean) => void;
 }) {
   return (
@@ -1970,7 +1983,9 @@ function SettingSwitch({
       </View>
       <View style={styles.settingText}>
         <Text style={[styles.settingLabel, { color: titleColor }]}>{label}</Text>
-        <Text style={styles.settingDescription}>{description}</Text>
+        <Text style={[styles.settingDescription, { color: descriptionColor }]}>
+          {description}
+        </Text>
       </View>
       <Switch
         {...(Platform.OS === "web" ? { activeThumbColor: accent } : {})}
@@ -1980,6 +1995,109 @@ function SettingSwitch({
         thumbColor={value ? accent : "#F7F4F5"}
       />
     </View>
+  );
+}
+
+function ExpandableSetting({
+  icon,
+  title,
+  description,
+  accent,
+  theme,
+  maxHeight,
+  children,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  description: string;
+  accent: string;
+  theme: AppTheme;
+  maxHeight: number;
+  children: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [renderContent, setRenderContent] = useState(false);
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: expanded ? 1 : 0,
+      duration: expanded ? 260 : 210,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      if (finished && !expanded) setRenderContent(false);
+    });
+  }, [expanded, progress]);
+
+  const toggle = () => {
+    if (!expanded) setRenderContent(true);
+    setExpanded((current) => !current);
+  };
+
+  const panelHeight = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, maxHeight],
+  });
+  const panelOffset = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-8, 0],
+  });
+  const chevronRotation = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "90deg"],
+  });
+
+  return (
+    <>
+      <Pressable
+        onPress={toggle}
+        style={styles.actionSettingRow}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+      >
+        <View style={[styles.settingIcon, { backgroundColor: `${accent}16` }]}>
+          <Ionicons name={icon} size={20} color={accent} />
+        </View>
+        <View style={styles.settingText}>
+          <Text style={[styles.settingLabel, { color: theme.title }]}>
+            {title}
+          </Text>
+          <Text style={[styles.settingDescription, { color: theme.muted }]}>
+            {description}
+          </Text>
+        </View>
+        <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
+          <Ionicons name="chevron-forward" size={18} color={theme.muted} />
+        </Animated.View>
+      </Pressable>
+      {renderContent && (
+        <Animated.View
+          pointerEvents={expanded ? "auto" : "none"}
+          accessibilityElementsHidden={!expanded}
+          importantForAccessibility={
+            expanded ? "auto" : "no-hide-descendants"
+          }
+          style={[
+            styles.disclosurePanel,
+            {
+              maxHeight: panelHeight,
+              opacity: progress,
+              transform: [{ translateY: panelOffset }],
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.disclosureBox,
+              { backgroundColor: theme.accentSoft },
+            ]}
+          >
+            {children}
+          </View>
+        </Animated.View>
+      )}
+    </>
   );
 }
 
@@ -1998,7 +2116,6 @@ function ProfileScreen({
   onUpdate: (profile: Profile) => void;
   onSwitchProfile: () => void;
 }) {
-  const [aboutVisible, setAboutVisible] = useState(false);
   const completed = items.filter((item) => item.done).length;
   const accent = theme.accent;
 
@@ -2038,11 +2155,13 @@ function ProfileScreen({
         <Text style={[styles.profileName, { color: theme.title }]}>
           {profile.name}
         </Text>
-        <Text style={styles.profileBirth}>
-          <Ionicons name="gift-outline" size={12} color={palette.muted} />{" "}
+        <Text style={[styles.profileBirth, { color: theme.muted }]}>
+          <Ionicons name="gift-outline" size={12} color={theme.muted} />{" "}
           {profile.birthDate}
         </Text>
-        <Text style={styles.profileBio}>{profile.bio}</Text>
+        <Text style={[styles.profileBio, { color: theme.muted }]}>
+          {profile.bio}
+        </Text>
         <Pressable
           onPress={onEdit}
           style={[styles.outlineProfileButton, { borderColor: `${accent}55` }]}
@@ -2063,21 +2182,27 @@ function ProfileScreen({
           <Text style={[styles.profileStatValue, { color: theme.title }]}>
             {completed}
           </Text>
-          <Text style={styles.profileStatLabel}>memórias</Text>
+          <Text style={[styles.profileStatLabel, { color: theme.muted }]}>
+            memórias
+          </Text>
         </View>
         <View style={styles.profileStatDivider} />
         <View style={styles.profileStat}>
           <Text style={[styles.profileStatValue, { color: theme.title }]}>
             {items.filter((item) => !item.done).length}
           </Text>
-          <Text style={styles.profileStatLabel}>planos</Text>
+          <Text style={[styles.profileStatLabel, { color: theme.muted }]}>
+            planos
+          </Text>
         </View>
         <View style={styles.profileStatDivider} />
         <View style={styles.profileStat}>
           <Text style={[styles.profileStatValue, { color: theme.title }]}>
-            4
+            1
           </Text>
-          <Text style={styles.profileStatLabel}>anos juntos</Text>
+          <Text style={[styles.profileStatLabel, { color: theme.muted }]}>
+             Dias junto
+          </Text>
         </View>
       </View>
 
@@ -2090,7 +2215,9 @@ function ProfileScreen({
           { backgroundColor: theme.surface, borderColor: theme.border },
         ]}
       >
-        <Text style={styles.themeHint}>Tema do aplicativo</Text>
+        <Text style={[styles.themeHint, { color: theme.muted }]}>
+          Tema do aplicativo
+        </Text>
         <View style={styles.themeOptions}>
           {(Object.keys(themes) as ThemeName[]).map((themeName) => {
             const optionTheme = themes[themeName];
@@ -2104,7 +2231,14 @@ function ProfileScreen({
                 <View
                   style={[
                     styles.themeSwatch,
-                    { backgroundColor: optionTheme.accent },
+                    {
+                      backgroundColor: optionTheme.character
+                        ? optionTheme.accent
+                        : optionTheme.surface,
+                      borderColor: active
+                        ? optionTheme.accent
+                        : optionTheme.border,
+                    },
                     active && styles.themeSwatchActive,
                   ]}
                 >
@@ -2115,15 +2249,13 @@ function ProfileScreen({
                       style={styles.themeSwatchCharacter}
                     />
                   ) : (
-                    active && (
-                      <Ionicons
-                        name="checkmark"
-                        size={17}
-                        color={palette.paper}
-                      />
-                    )
+                    <Ionicons
+                      name={optionTheme.icon ?? "color-palette-outline"}
+                      size={22}
+                      color={optionTheme.accent}
+                    />
                   )}
-                  {active && optionTheme.character && (
+                  {active && (
                     <View style={styles.themeSwatchCheck}>
                       <Ionicons
                         name="checkmark"
@@ -2136,6 +2268,7 @@ function ProfileScreen({
                 <Text
                   style={[
                     styles.themeName,
+                    { color: theme.muted },
                     active && {
                       color: optionTheme.accent,
                       fontWeight: "800",
@@ -2166,9 +2299,12 @@ function ProfileScreen({
           value={profile.notifications}
           accent={accent}
           titleColor={theme.title}
+          descriptionColor={theme.muted}
           onChange={(notifications) => onUpdate({ ...profile, notifications })}
         />
-        <View style={styles.settingDivider} />
+        <View
+          style={[styles.settingDivider, { backgroundColor: theme.border }]}
+        />
         <SettingSwitch
           icon="chatbubbles-outline"
           label="Pergunta da semana"
@@ -2176,17 +2312,8 @@ function ProfileScreen({
           value={profile.weeklyQuestion}
           accent={accent}
           titleColor={theme.title}
+          descriptionColor={theme.muted}
           onChange={(weeklyQuestion) => onUpdate({ ...profile, weeklyQuestion })}
-        />
-        <View style={styles.settingDivider} />
-        <SettingSwitch
-          icon="shield-checkmark-outline"
-          label="Perfil privado"
-          description="Dados ficam somente neste aparelho"
-          value={profile.privateProfile}
-          accent={accent}
-          titleColor={theme.title}
-          onChange={(privateProfile) => onUpdate({ ...profile, privateProfile })}
         />
       </View>
 
@@ -2199,54 +2326,73 @@ function ProfileScreen({
           { backgroundColor: theme.surface, borderColor: theme.border },
         ]}
       >
-        <Pressable
-          onPress={() => setAboutVisible(!aboutVisible)}
-          style={styles.actionSettingRow}
+        <ExpandableSetting
+          icon="heart-circle-outline"
+          title="Sobre o aplicativo"
+          description="Versão 1.1.0"
+          accent={accent}
+          theme={theme}
+          maxHeight={180}
         >
-          <View style={[styles.settingIcon, { backgroundColor: `${accent}16` }]}>
-            <Ionicons name="heart-circle-outline" size={20} color={accent} />
-          </View>
-          <View style={styles.settingText}>
-            <Text style={[styles.settingLabel, { color: theme.title }]}>
-              Sobre o aplicativo
-            </Text>
-            <Text style={styles.settingDescription}>Versão 1.1.0</Text>
-          </View>
-          <Ionicons
-            name={aboutVisible ? "chevron-up" : "chevron-forward"}
-            size={18}
-            color="#B3A9AE"
-          />
-        </Pressable>
-        {aboutVisible && (
-          <View style={styles.aboutBox}>
-            <Text style={styles.aboutText}>
-              CatLovers é o nosso cantinho para guardar histórias,
-              escolher o próximo evento e transformar planos simples em memória.
-            </Text>
-            <Text style={[styles.aboutSignature, { color: accent }]}>
-              Feito com carinho para nós dois.
-            </Text>
-          </View>
-        )}
-        <View style={styles.settingDivider} />
-        <Pressable
-          onPress={() =>
-            Alert.alert(
-              "Seus dados",
-              "Perfis, preferências e registros são armazenados localmente neste aparelho.",
-            )
-          }
-          style={styles.actionSettingRow}
-        >
-          <View style={[styles.settingIcon, { backgroundColor: `${accent}16` }]}>
-            <Ionicons name="document-text-outline" size={19} color={accent} />
-          </View>
-          <Text style={[styles.menuLabel, { color: theme.title }]}>
-            Privacidade e dados
+          <Text style={[styles.aboutText, { color: theme.muted }]}>
+            CatLovers é o nosso cantinho para guardar histórias, escolher o
+            próximo evento e transformar planos simples em memória.
           </Text>
-          <Ionicons name="chevron-forward" size={18} color="#B3A9AE" />
-        </Pressable>
+          <Text style={[styles.aboutSignature, { color: accent }]}>
+            Feito com carinho para nós dois.
+          </Text>
+        </ExpandableSetting>
+        <View
+          style={[styles.settingDivider, { backgroundColor: theme.border }]}
+        />
+        <ExpandableSetting
+          icon="document-text-outline"
+          title="Privacidade e dados"
+          description="Como suas informações serão tratadas"
+          accent={accent}
+          theme={theme}
+          maxHeight={620}
+        >
+          <Text style={[styles.privacyIntro, { color: theme.muted }]}>
+            Hoje os registros ficam no armazenamento local. Quando a
+            sincronização for ativada, os dados serão enviados pela API e
+            armazenados no banco do CatLovers.
+          </Text>
+          {[
+            {
+              title: "Dados tratados",
+              text: "Perfil, preferências, lembranças, planos, datas, avaliações, metas e imagens adicionadas.",
+            },
+            {
+              title: "Finalidade",
+              text: "Manter a conta, sincronizar o casal entre dispositivos e disponibilizar as funções do aplicativo.",
+            },
+            {
+              title: "Compartilhamento",
+              text: "Os dados não serão vendidos. O acesso será limitado à infraestrutura necessária para operar a API, o banco e o armazenamento.",
+            },
+            {
+              title: "Seus direitos",
+              text: "Será possível solicitar confirmação, acesso, correção, portabilidade e exclusão, conforme a integração da conta for implementada.",
+            },
+            {
+              title: "Segurança e retenção",
+              text: "A transmissão deverá usar conexão segura, acesso autenticado e retenção somente pelo período necessário à prestação do serviço.",
+            },
+          ].map((section) => (
+            <View key={section.title} style={styles.privacySection}>
+              <Text style={[styles.privacyTitle, { color: theme.title }]}>
+                {section.title}
+              </Text>
+              <Text style={[styles.privacyText, { color: theme.muted }]}>
+                {section.text}
+              </Text>
+            </View>
+          ))}
+          <Text style={[styles.privacyDocumentHint, { color: accent }]}>
+            Consulte também PRIVACIDADE_E_DADOS.md no projeto.
+          </Text>
+        </ExpandableSetting>
       </View>
 
       <Pressable
@@ -3099,11 +3245,19 @@ export default function App() {
         if (storedProfiles) {
           const parsedProfiles = JSON.parse(storedProfiles) as Profile[];
           setProfiles(
-            parsedProfiles.map((profile) => ({
-              ...profile,
-              name: correctLegacyText(profile.name),
-              bio: correctLegacyText(profile.bio),
-            })),
+            parsedProfiles.map((profile) => {
+              const legacyProfile = profile as Profile & {
+                privateProfile?: boolean;
+              };
+              const { privateProfile: _privateProfile, ...profileData } =
+                legacyProfile;
+              return {
+                ...profileData,
+                name: correctLegacyText(profile.name),
+                bio: correctLegacyText(profile.bio),
+                theme: normalizeThemeName(profile.theme),
+              };
+            }),
           );
         }
         if (storedMonthlyGoals) {
@@ -3131,7 +3285,7 @@ export default function App() {
   const activeProfile = profiles.find(
     (profile) => profile.id === activeProfileId,
   );
-  const activeTheme = themes[activeProfile?.theme ?? "Romance"];
+  const activeTheme = themes[activeProfile?.theme ?? "Light"];
   const openAddModal = (mode: AddMode) => {
     setEditingMemory(undefined);
     setAddMode(mode);
@@ -3264,7 +3418,7 @@ export default function App() {
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: activeTheme.background }]}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={activeTheme.isDark ? "light" : "dark"} />
       <View
         style={[styles.appShell, { backgroundColor: activeTheme.background }]}
       >
@@ -4624,24 +4778,22 @@ const styles = StyleSheet.create({
   },
   themeOption: {
     alignItems: "center",
-    width: "33.333%",
-    marginBottom: 15,
+    width: "50%",
+    marginBottom: 18,
   },
   themeSwatch: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "transparent",
+    borderWidth: 2,
     overflow: "hidden",
   },
   themeSwatchActive: {
-    borderColor: "rgba(255,255,255,0.9)",
     transform: [{ scale: 1.06 }],
   },
-  themeSwatchCharacter: { width: 40, height: 40 },
+  themeSwatchCharacter: { width: 46, height: 46 },
   themeSwatchCheck: {
     position: "absolute",
     right: 1,
@@ -4655,7 +4807,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: palette.paper,
   },
-  themeName: { color: palette.muted, fontSize: 9, marginTop: 6 },
+  themeName: { fontSize: 10, marginTop: 7 },
   settingRow: {
     minHeight: 73,
     flexDirection: "row",
@@ -4682,15 +4834,20 @@ const styles = StyleSheet.create({
     lineHeight: 13,
     marginTop: 3,
   },
-  settingDivider: { height: 1, backgroundColor: palette.line, marginLeft: 50 },
-  aboutBox: {
-    backgroundColor: "#FAF6F7",
+  settingDivider: { height: 1, marginLeft: 50 },
+  disclosurePanel: { overflow: "hidden" },
+  disclosureBox: {
     borderRadius: 14,
     padding: 14,
     marginBottom: 13,
   },
   aboutText: { color: palette.muted, fontSize: 11, lineHeight: 17 },
   aboutSignature: { fontSize: 10, fontWeight: "800", marginTop: 8 },
+  privacyIntro: { fontSize: 10, lineHeight: 16, marginBottom: 4 },
+  privacySection: { marginTop: 11 },
+  privacyTitle: { fontSize: 10, fontWeight: "900" },
+  privacyText: { fontSize: 9, lineHeight: 14, marginTop: 3 },
+  privacyDocumentHint: { fontSize: 9, fontWeight: "800", marginTop: 13 },
   switchProfileButton: {
     height: 53,
     borderRadius: 17,

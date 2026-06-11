@@ -28,7 +28,7 @@ e a persistência no dispositivo já estão implementados.
 - seleção entre os perfis de Letícia e Luis;
 - edição de nome, data de nascimento, biografia e foto;
 - preferências individuais salvas por perfil;
-- temas Romance, Lavanda, Floresta, Noite, Cinnamoroll e Chococat;
+- temas Light mode, Dark mode, Cinnamoroll e Chococat;
 - cores, superfícies, ilustrações e destaques adaptados ao tema ativo;
 - transições animadas entre as áreas do aplicativo.
 
@@ -109,6 +109,7 @@ CatLovers/
 |       |-- chococat.png
 |       `-- cinnamoroll.png
 |-- App.tsx            # Telas, componentes, estado, persistência e estilos
+|-- PRIVACIDADE_E_DADOS.md # Política técnica atual e planejada
 |-- app.json           # Configuração do Expo, Android, iOS e web
 |-- package.json       # Dependências e scripts
 |-- package-lock.json  # Versões fixadas das dependências
@@ -223,8 +224,11 @@ npm run typecheck
 ## Privacidade
 
 Na versão atual, perfis, preferências, lembranças, fotos referenciadas, planos e
-metas ficam no armazenamento local do dispositivo ou navegador. Não há envio
-desses dados para um servidor do CatLovers.
+metas ficam no armazenamento local do dispositivo ou navegador. A arquitetura
+planejada prevê autenticação, API, banco de dados e sincronização segura.
+
+O tratamento atual e os requisitos para essa integração estão documentados em
+[`PRIVACIDADE_E_DADOS.md`](./PRIVACIDADE_E_DADOS.md).
 
 ## Imagens dos temas
 
