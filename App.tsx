@@ -82,8 +82,17 @@ type CoupleItem = {
   color: string;
 };
 
+type MonthlyGoal = {
+  monthKey: string;
+  title: string;
+  description: string;
+};
+
 const STORAGE_KEY = "@catlovers/items";
 const PROFILES_KEY = "@catlovers/profiles";
+const MONTHLY_GOALS_KEY = "@catlovers/monthly-goals";
+const PLANS_MONTH_KEY = "2026-06";
+const PLANS_MONTH_LABEL = "Junho 2026";
 const defaultCollectionFilters: CollectionFilters = {
   category: "Todos",
   month: null,
@@ -255,6 +264,14 @@ const initialItems: CoupleItem[] = [
     color: palette.blush,
   },
 ];
+
+const initialMonthlyGoals: Record<string, MonthlyGoal> = {
+  [PLANS_MONTH_KEY]: {
+    monthKey: PLANS_MONTH_KEY,
+    title: "Mais tempo para nós",
+    description: "Sem pressa. O importante é fazer caber na vida real.",
+  },
+};
 
 const categoryMeta: Record<
   Category,
@@ -537,11 +554,13 @@ function AppHeader({
   eyebrow,
   title,
   onAdd,
+  addAccessibilityLabel,
   theme,
 }: {
   eyebrow: string;
   title: string;
   onAdd?: () => void;
+  addAccessibilityLabel?: string;
   theme: AppTheme;
 }) {
   return (
@@ -552,6 +571,7 @@ function AppHeader({
       </View>
       {onAdd && (
         <Pressable
+          accessibilityLabel={addAccessibilityLabel}
           onPress={onAdd}
           style={({ pressed }) => [
             styles.addButton,
@@ -1326,14 +1346,159 @@ function CollectionScreen({
   );
 }
 
+function MonthlyGoalModal({
+  visible,
+  monthKey,
+  monthLabel,
+  goal,
+  theme,
+  onClose,
+  onSave,
+}: {
+  visible: boolean;
+  monthKey: string;
+  monthLabel: string;
+  goal?: MonthlyGoal;
+  theme: AppTheme;
+  onClose: () => void;
+  onSave: (goal: MonthlyGoal) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const isEditing = Boolean(goal);
+
+  useEffect(() => {
+    if (!visible) return;
+    setTitle(goal?.title ?? "");
+    setDescription(goal?.description ?? "");
+  }, [goal, visible]);
+
+  const save = () => {
+    if (!title.trim()) {
+      Alert.alert("Falta um título", "Dê um título para a meta mensal.");
+      return;
+    }
+    if (!description.trim()) {
+      Alert.alert(
+        "Falta uma descrição",
+        "Conte como vocês pretendem viver essa meta.",
+      );
+      return;
+    }
+    onSave({
+      monthKey,
+      title: title.trim(),
+      description: description.trim(),
+    });
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.modalOverlay}
+      >
+        <Pressable style={styles.modalDismiss} onPress={onClose} />
+        <View
+          style={[styles.goalModalSheet, { backgroundColor: theme.background }]}
+        >
+          <View style={styles.modalHandle} />
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={[styles.modalEyebrow, { color: theme.accent }]}>
+                {monthLabel.toUpperCase()}
+              </Text>
+              <Text style={[styles.modalTitle, { color: theme.title }]}>
+                {isEditing ? "Editar meta mensal" : "Criar meta mensal"}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityLabel="Fechar meta mensal"
+              onPress={onClose}
+              style={[styles.closeButton, { backgroundColor: theme.surface }]}
+            >
+              <Ionicons name="close" size={22} color={theme.title} />
+            </Pressable>
+          </View>
+
+          <Text style={[styles.goalModalIntro, { color: palette.muted }]}>
+            Cada mês pode ter uma única meta compartilhada.
+          </Text>
+
+          <Text style={[styles.inputLabel, { color: theme.title }]}>Título</Text>
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            placeholder="Ex.: Mais tempo para nós"
+            placeholderTextColor="#AFA4AA"
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                color: theme.title,
+              },
+            ]}
+          />
+
+          <Text style={[styles.inputLabel, { color: theme.title }]}>
+            Descrição
+          </Text>
+          <TextInput
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Como vocês querem colocar essa meta em prática?"
+            placeholderTextColor="#AFA4AA"
+            style={[
+              styles.input,
+              styles.goalDescriptionInput,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                color: theme.title,
+              },
+            ]}
+            multiline
+            maxLength={220}
+          />
+          <Text style={styles.characterCount}>{description.length}/220</Text>
+
+          <Pressable onPress={save} style={styles.saveButton}>
+            <LinearGradient
+              colors={theme.heroColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.saveGradient}
+            >
+              <Text style={styles.saveButtonText}>
+                {isEditing ? "Salvar meta mensal" : "Criar meta mensal"}
+              </Text>
+              <Ionicons name="flag" size={17} color={palette.paper} />
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 function PlansScreen({
   items,
-  onAdd,
+  monthlyGoal,
+  onConfigureGoal,
+  onAddIdea,
   onToggle,
   theme,
 }: {
   items: CoupleItem[];
-  onAdd: () => void;
+  monthlyGoal?: MonthlyGoal;
+  onConfigureGoal: () => void;
+  onAddIdea: () => void;
   onToggle: (id: string) => void;
   theme: AppTheme;
 }) {
@@ -1346,14 +1511,17 @@ function PlansScreen({
       <AppHeader
         eyebrow="TEMPO DE QUALIDADE"
         title="Planos de junho"
-        onAdd={onAdd}
+        onAdd={onConfigureGoal}
+        addAccessibilityLabel="Configurar meta mensal"
         theme={theme}
       />
       <LinearGradient colors={theme.heroColors} style={styles.monthCard}>
         <View style={styles.monthTop}>
-          <View>
+          <View style={styles.monthGoalContent}>
             <Text style={styles.monthLabel}>META DO MÊS</Text>
-            <Text style={styles.monthTitle}>Mais tempo para nós</Text>
+            <Text style={styles.monthTitle}>
+              {monthlyGoal?.title ?? "Defina a meta do mês"}
+            </Text>
           </View>
           <Text style={styles.monthProgress}>
             {done}/{plans.length}
@@ -1363,7 +1531,8 @@ function PlansScreen({
           <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
         <Text style={styles.monthHint}>
-          Sem pressa. O importante é fazer caber na vida real.
+          {monthlyGoal?.description ??
+            "Use o botão acima para escolher um objetivo para este mês."}
         </Text>
       </LinearGradient>
 
@@ -1440,7 +1609,7 @@ function PlansScreen({
       })}
 
       <Pressable
-        onPress={onAdd}
+        onPress={onAddIdea}
         style={[styles.dashedButton, { borderColor: `${theme.accent}70` }]}
       >
         <Ionicons name="add-circle-outline" size={21} color={theme.accent} />
@@ -2555,12 +2724,15 @@ export default function App() {
   const transitionDirection = useRef(1);
   const [items, setItems] = useState<CoupleItem[]>(initialItems);
   const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
+  const [monthlyGoals, setMonthlyGoals] =
+    useState<Record<string, MonthlyGoal>>(initialMonthlyGoals);
   const [activeProfileId, setActiveProfileId] = useState<Profile["id"] | null>(
     null,
   );
   const [modalVisible, setModalVisible] = useState(false);
   const [addMode, setAddMode] = useState<AddMode>("memory");
   const [editingMemory, setEditingMemory] = useState<CoupleItem>();
+  const [monthlyGoalVisible, setMonthlyGoalVisible] = useState(false);
   const [editProfileVisible, setEditProfileVisible] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -2568,8 +2740,9 @@ export default function App() {
     Promise.all([
       AsyncStorage.getItem(STORAGE_KEY),
       AsyncStorage.getItem(PROFILES_KEY),
+      AsyncStorage.getItem(MONTHLY_GOALS_KEY),
     ])
-      .then(([storedItems, storedProfiles]) => {
+      .then(([storedItems, storedProfiles, storedMonthlyGoals]) => {
         if (storedItems) {
           const parsedItems = JSON.parse(storedItems) as CoupleItem[];
           setItems(
@@ -2591,6 +2764,9 @@ export default function App() {
             })),
           );
         }
+        if (storedMonthlyGoals) {
+          setMonthlyGoals(JSON.parse(storedMonthlyGoals));
+        }
       })
       .catch(() => undefined)
       .finally(() => setLoaded(true));
@@ -2603,6 +2779,12 @@ export default function App() {
   useEffect(() => {
     if (loaded) AsyncStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
   }, [loaded, profiles]);
+
+  useEffect(() => {
+    if (loaded) {
+      AsyncStorage.setItem(MONTHLY_GOALS_KEY, JSON.stringify(monthlyGoals));
+    }
+  }, [loaded, monthlyGoals]);
 
   const activeProfile = profiles.find(
     (profile) => profile.id === activeProfileId,
@@ -2673,8 +2855,10 @@ export default function App() {
       return (
         <PlansScreen
           items={items}
+          monthlyGoal={monthlyGoals[PLANS_MONTH_KEY]}
           theme={activeTheme}
-          onAdd={() => openAddModal("plan")}
+          onConfigureGoal={() => setMonthlyGoalVisible(true)}
+          onAddIdea={() => openAddModal("plan")}
           onToggle={onToggle}
         />
       );
@@ -2706,7 +2890,7 @@ export default function App() {
         onViewAll={() => navigateToTab("colecao")}
       />
     );
-  }, [activeProfile, activeTheme, items, navigateToTab, tab]);
+  }, [activeProfile, activeTheme, items, monthlyGoals, navigateToTab, tab]);
 
   if (!loaded) {
     return (
@@ -2802,6 +2986,21 @@ export default function App() {
           );
           setModalVisible(false);
           setEditingMemory(undefined);
+        }}
+      />
+      <MonthlyGoalModal
+        visible={monthlyGoalVisible}
+        monthKey={PLANS_MONTH_KEY}
+        monthLabel={PLANS_MONTH_LABEL}
+        goal={monthlyGoals[PLANS_MONTH_KEY]}
+        theme={activeTheme}
+        onClose={() => setMonthlyGoalVisible(false)}
+        onSave={(goal) => {
+          setMonthlyGoals((current) => ({
+            ...current,
+            [goal.monthKey]: goal,
+          }));
+          setMonthlyGoalVisible(false);
         }}
       />
       <EditProfileModal
@@ -3206,6 +3405,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  monthGoalContent: { flex: 1, paddingRight: 14 },
   monthLabel: {
     color: palette.paper,
     fontSize: 9,
@@ -3485,6 +3685,25 @@ const styles = StyleSheet.create({
   filterApplyText: { color: palette.paper, fontSize: 11, fontWeight: "900" },
   modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(35,28,34,0.4)" },
   modalDismiss: { flex: 1 },
+  goalModalSheet: {
+    backgroundColor: palette.cream,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 22,
+    paddingBottom: Platform.OS === "ios" ? 32 : 22,
+  },
+  goalModalIntro: {
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: -6,
+    marginBottom: 20,
+  },
+  goalDescriptionInput: {
+    height: 104,
+    paddingTop: 14,
+    textAlignVertical: "top",
+    marginBottom: 7,
+  },
   modalSheet: {
     backgroundColor: palette.cream,
     borderTopLeftRadius: 30,
