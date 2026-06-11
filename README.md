@@ -108,7 +108,20 @@ CatLovers/
 |       |-- README.md
 |       |-- chococat.png
 |       `-- cinnamoroll.png
-|-- App.tsx            # Telas, componentes, estado, persistência e estilos
+|-- src/
+|   `-- CatLoversApp.tsx # Implementação compartilhada integral
+|-- versions/
+|   |-- IOS/
+|   |   `-- App.tsx
+|   |-- ANDROID/
+|   |   `-- App.tsx
+|   |-- WEB/
+|   |   `-- App.tsx
+|   |-- index.ios.tsx
+|   |-- index.android.tsx
+|   |-- index.web.tsx
+|   `-- index.tsx
+|-- App.tsx            # Entrada principal selecionada pelo Expo
 |-- PRIVACIDADE_E_DADOS.md # Política técnica atual e planejada
 |-- app.json           # Configuração do Expo, Android, iOS e web
 |-- package.json       # Dependências e scripts
@@ -118,9 +131,13 @@ CatLovers/
 `-- README.md
 ```
 
-Neste estágio, a implementação está centralizada em `App.tsx`. O crescimento do
-produto exigirá a separação de telas, componentes, modelos, serviços,
-navegação, temas e regras de negócio em módulos próprios.
+A implementação está centralizada em `src/CatLoversApp.tsx` e é carregada por
+entradas específicas de iOS, Android e web. Dessa forma, as três versões usam
+exatamente os mesmos componentes, regras, persistência, animações e design.
+
+O crescimento do produto ainda exigirá a separação de telas, componentes,
+modelos, serviços, navegação, temas e regras de negócio em módulos próprios,
+sem duplicar a implementação entre plataformas.
 
 ## Persistência de dados
 
@@ -189,6 +206,18 @@ npm run android
 npm run ios
 npm run web
 ```
+
+### Entradas por plataforma
+
+O Expo seleciona automaticamente a entrada correspondente:
+
+- iOS: `versions/IOS/App.tsx`;
+- Android: `versions/ANDROID/App.tsx`;
+- web: `versions/WEB/App.tsx`.
+
+As três entradas carregam a mesma implementação de
+`src/CatLoversApp.tsx`. Não existem versões reduzidas nem funcionalidades
+exclusivas de uma plataforma.
 
 Para testar em um iPhone durante o desenvolvimento:
 
