@@ -71,9 +71,11 @@ type CoupleItem = {
   id: string;
   title: string;
   category: Category;
+  ideaType?: MemoryCategory;
   note: string;
   date: string;
   occurredOn?: string;
+  plannedFor?: string;
   photoUri?: string;
   done: boolean;
   rating?: number;
@@ -234,8 +236,10 @@ const initialItems: CoupleItem[] = [
     id: "4",
     title: "Café novo no centro",
     category: "Plano",
+    ideaType: "Role",
     note: "Ir de manhã e caminhar pela livraria depois.",
     date: "21 JUN",
+    plannedFor: "2026-06-21",
     done: false,
     color: palette.apricot,
   },
@@ -243,8 +247,10 @@ const initialItems: CoupleItem[] = [
     id: "5",
     title: "Noite sem celular",
     category: "Plano",
+    ideaType: "Role",
     note: "Jantar feito juntos e cartas na mesa.",
     date: "27 JUN",
+    plannedFor: "2026-06-27",
     done: false,
     color: palette.blush,
   },
@@ -261,6 +267,14 @@ const categoryMeta: Record<
   Anime: { icon: "sparkles-outline", color: "#7D78B8", label: "Anime" },
   Plano: { icon: "calendar-outline", color: palette.apricot, label: "Plano" },
 };
+
+const memoryCategories: MemoryCategory[] = [
+  "Filme",
+  "Serie",
+  "Jogo",
+  "Role",
+  "Anime",
+];
 
 const monthNames = [
   "Janeiro",
@@ -1328,39 +1342,71 @@ function PlansScreen({
         </Text>
         <Ionicons name="heart" size={17} color={theme.accent} />
       </View>
-      {plans.map((item) => (
-        <Pressable
-          key={item.id}
-          onPress={() => onToggle(item.id)}
-          style={[styles.planRow, { borderBottomColor: theme.border }]}
-        >
-          <View
-            style={[
-              styles.bigCheck,
-              item.done && { backgroundColor: palette.sage, borderColor: palette.sage },
-            ]}
+      {plans.map((item) => {
+        const ideaMeta = item.ideaType ? categoryMeta[item.ideaType] : null;
+        return (
+          <Pressable
+            key={item.id}
+            onPress={() => onToggle(item.id)}
+            style={[styles.planRow, { borderBottomColor: theme.border }]}
           >
-            {item.done && (
-              <Ionicons name="checkmark" size={18} color={palette.paper} />
-            )}
-          </View>
-          <View style={styles.planContent}>
-            <Text
+            <View
               style={[
-                styles.planTitle,
-                { color: theme.title },
-                item.done && styles.doneText,
+                styles.bigCheck,
+                item.done && {
+                  backgroundColor: palette.sage,
+                  borderColor: palette.sage,
+                },
               ]}
             >
-              {item.title}
-            </Text>
-            <Text style={styles.planNote}>{item.note}</Text>
-          </View>
-          <Text style={[styles.planDate, { color: theme.accent }]}>
-            {item.date.split(" ")[0]}
-          </Text>
-        </Pressable>
-      ))}
+              {item.done && (
+                <Ionicons name="checkmark" size={18} color={palette.paper} />
+              )}
+            </View>
+            <View style={styles.planContent}>
+              <Text
+                style={[
+                  styles.planTitle,
+                  { color: theme.title },
+                  item.done && styles.doneText,
+                ]}
+              >
+                {item.title}
+              </Text>
+              <Text style={styles.planNote}>{item.note}</Text>
+              {ideaMeta && (
+                <View
+                  style={[
+                    styles.planIdeaBadge,
+                    { backgroundColor: `${ideaMeta.color}16` },
+                  ]}
+                >
+                  <Ionicons
+                    name={ideaMeta.icon}
+                    size={11}
+                    color={ideaMeta.color}
+                  />
+                  <Text
+                    style={[styles.planIdeaBadgeText, { color: ideaMeta.color }]}
+                  >
+                    {ideaMeta.label}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.planDateContainer}>
+              <Ionicons
+                name={item.plannedFor ? "calendar-outline" : "calendar-clear-outline"}
+                size={13}
+                color={theme.accent}
+              />
+              <Text style={[styles.planDate, { color: theme.accent }]}>
+                {item.date}
+              </Text>
+            </View>
+          </Pressable>
+        );
+      })}
 
       <Pressable
         onPress={onAdd}
@@ -1650,11 +1696,11 @@ function ProfileScreen({
         {aboutVisible && (
           <View style={styles.aboutBox}>
             <Text style={styles.aboutText}>
-              CatLovers é o cantinho de Letícia e Luis para guardar histórias,
-              escolher o próximo filme e transformar planos simples em memória.
+              CatLovers é o nosso cantinho para guardar histórias,
+              escolher o próximo evento e transformar planos simples em memória.
             </Text>
             <Text style={[styles.aboutSignature, { color: accent }]}>
-              Feito com carinho para dois.
+              Feito com carinho para nós dois.
             </Text>
           </View>
         )}
@@ -1804,15 +1850,17 @@ function EditProfileModal({
   );
 }
 
-function MemoryCalendar({
+function DateCalendar({
   selectedDate,
   visibleMonth,
+  range,
   theme,
   onChangeMonth,
   onSelect,
 }: {
-  selectedDate: string;
+  selectedDate?: string;
   visibleMonth: Date;
+  range: "past" | "future";
   theme: AppTheme;
   onChangeMonth: (month: Date) => void;
   onSelect: (date: string) => void;
@@ -1824,7 +1872,8 @@ function MemoryCalendar({
   const today = new Date();
   const todayIso = toIsoDate(today);
   const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const canGoNext = visibleMonth < currentMonth;
+  const canGoPrevious = range === "past" || visibleMonth > currentMonth;
+  const canGoNext = range === "future" || visibleMonth < currentMonth;
   const cells = Array.from({ length: 42 }, (_, index) => {
     const day = index - firstWeekday + 1;
     return day > 0 && day <= daysInMonth ? day : null;
@@ -1839,10 +1888,18 @@ function MemoryCalendar({
     >
       <View style={styles.calendarHeader}>
         <Pressable
+          disabled={!canGoPrevious}
           onPress={() => onChangeMonth(new Date(year, month - 1, 1))}
-          style={styles.calendarNavButton}
+          style={[
+            styles.calendarNavButton,
+            !canGoPrevious && styles.calendarNavDisabled,
+          ]}
         >
-          <Ionicons name="chevron-back" size={18} color={theme.accent} />
+          <Ionicons
+            name="chevron-back"
+            size={18}
+            color={canGoPrevious ? theme.accent : "#CFC5BF"}
+          />
         </Pressable>
         <Text style={[styles.calendarMonth, { color: theme.title }]}>
           {monthNames[month]} {year}
@@ -1872,11 +1929,12 @@ function MemoryCalendar({
           }
           const isoDate = toIsoDate(new Date(year, month, day));
           const selected = isoDate === selectedDate;
-          const future = isoDate > todayIso;
+          const disabled =
+            range === "past" ? isoDate > todayIso : isoDate < todayIso;
           return (
             <Pressable
               key={isoDate}
-              disabled={future}
+              disabled={disabled}
               onPress={() => onSelect(isoDate)}
               style={styles.calendarDayCell}
             >
@@ -1890,7 +1948,7 @@ function MemoryCalendar({
                   style={[
                     styles.calendarDayText,
                     selected && styles.calendarDayTextSelected,
-                    future && styles.calendarDayTextDisabled,
+                    disabled && styles.calendarDayTextDisabled,
                   ]}
                 >
                   {day}
@@ -1901,6 +1959,57 @@ function MemoryCalendar({
         })}
       </View>
     </View>
+  );
+}
+
+function CategorySelector({
+  label,
+  category,
+  theme,
+  onChange,
+}: {
+  label: string;
+  category: MemoryCategory;
+  theme: AppTheme;
+  onChange: (category: MemoryCategory) => void;
+}) {
+  return (
+    <>
+      <Text style={[styles.inputLabel, { color: theme.title }]}>{label}</Text>
+      <View style={styles.categoryGrid}>
+        {memoryCategories.map((item) => {
+          const meta = categoryMeta[item];
+          const active = category === item;
+          return (
+            <Pressable
+              key={item}
+              onPress={() => onChange(item)}
+              style={[
+                styles.categoryOption,
+                active && {
+                  borderColor: meta.color,
+                  backgroundColor: `${meta.color}12`,
+                },
+              ]}
+            >
+              <Ionicons
+                name={meta.icon}
+                size={20}
+                color={active ? meta.color : palette.muted}
+              />
+              <Text
+                style={[
+                  styles.categoryOptionText,
+                  active && { color: meta.color },
+                ]}
+              >
+                {meta.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </>
   );
 }
 
@@ -1925,26 +2034,21 @@ function AddModal({
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   );
   const [calendarVisible, setCalendarVisible] = useState(false);
+  const [plannedDate, setPlannedDate] = useState<string>();
   const [photoUri, setPhotoUri] = useState<string>();
   const [rating, setRating] = useState(0);
   const isPlan = mode === "plan";
-  const memoryCategories: MemoryCategory[] = [
-    "Filme",
-    "Serie",
-    "Jogo",
-    "Role",
-    "Anime",
-  ];
 
   useEffect(() => {
     if (!visible) return;
     setTitle("");
     setNote("");
-    setCategory("Filme");
+    setCategory(mode === "plan" ? "Role" : "Filme");
     const today = new Date();
     setSelectedDate(toIsoDate(today));
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
     setCalendarVisible(false);
+    setPlannedDate(undefined);
     setPhotoUri(undefined);
     setRating(0);
   }, [mode, visible]);
@@ -1984,12 +2088,20 @@ function AddModal({
           ? "Um novo momento para viver juntos."
           : "Uma lembrança especial guardada juntos."),
       category: savedCategory,
-      date: isPlan ? "30 JUN" : formatCardDate(selectedDate),
+      ideaType: isPlan ? category : undefined,
+      date: isPlan
+        ? plannedDate
+          ? formatCardDate(plannedDate)
+          : "EM BREVE"
+        : formatCardDate(selectedDate),
       occurredOn: isPlan ? undefined : selectedDate,
+      plannedFor: isPlan ? plannedDate : undefined,
       photoUri: isPlan ? undefined : photoUri,
       done: !isPlan,
       rating: isPlan || rating === 0 ? undefined : rating,
-      color: categoryMeta[savedCategory].color,
+      color: isPlan
+        ? categoryMeta[category].color
+        : categoryMeta[savedCategory].color,
     });
   };
 
@@ -2027,44 +2139,104 @@ function AddModal({
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-          {!isPlan && (
+          {isPlan ? (
             <>
+              <CategorySelector
+                label="Tipo de ideia"
+                category={category}
+                theme={theme}
+                onChange={setCategory}
+              />
+
               <Text style={[styles.inputLabel, { color: theme.title }]}>
-                Que lembrança vamos guardar?
+                Data prevista (opcional)
               </Text>
-              <View style={styles.categoryGrid}>
-                {memoryCategories.map((item) => {
-                  const meta = categoryMeta[item];
-                  const active = category === item;
-                  return (
-                    <Pressable
-                      key={item}
-                      onPress={() => setCategory(item)}
-                      style={[
-                        styles.categoryOption,
-                        active && {
-                          borderColor: meta.color,
-                          backgroundColor: `${meta.color}12`,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={meta.icon}
-                        size={20}
-                        color={active ? meta.color : palette.muted}
-                      />
-                      <Text
-                        style={[
-                          styles.categoryOptionText,
-                          active && { color: meta.color },
-                        ]}
-                      >
-                        {meta.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <Pressable
+                onPress={() => setCalendarVisible((current) => !current)}
+                style={[
+                  styles.datePickerButton,
+                  { backgroundColor: theme.surface, borderColor: theme.border },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.datePickerIcon,
+                    { backgroundColor: theme.accentSoft },
+                  ]}
+                >
+                  <Ionicons
+                    name={
+                      plannedDate
+                        ? "calendar-outline"
+                        : "calendar-clear-outline"
+                    }
+                    size={19}
+                    color={theme.accent}
+                  />
+                </View>
+                <View style={styles.datePickerText}>
+                  <Text style={[styles.datePickerValue, { color: theme.title }]}>
+                    {plannedDate
+                      ? formatFullDate(plannedDate)
+                      : "Sem data prevista"}
+                  </Text>
+                  <Text style={styles.datePickerHint}>
+                    {plannedDate
+                      ? "Toque para escolher outra data"
+                      : "Toque para escolher uma data"}
+                  </Text>
+                </View>
+                <Ionicons
+                  name={calendarVisible ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={theme.accent}
+                />
+              </Pressable>
+              {calendarVisible && (
+                <DateCalendar
+                  selectedDate={plannedDate}
+                  visibleMonth={visibleMonth}
+                  range="future"
+                  theme={theme}
+                  onChangeMonth={setVisibleMonth}
+                  onSelect={(date) => {
+                    setPlannedDate(date);
+                    setCalendarVisible(false);
+                  }}
+                />
+              )}
+              {plannedDate && (
+                <Pressable
+                  onPress={() => {
+                    setPlannedDate(undefined);
+                    setCalendarVisible(false);
+                  }}
+                  style={styles.clearPlannedDateButton}
+                >
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={16}
+                    color={theme.accent}
+                  />
+                  <Text
+                    style={[
+                      styles.clearPlannedDateText,
+                      { color: theme.accent },
+                    ]}
+                  >
+                    Remover data prevista
+                  </Text>
+                </Pressable>
+              )}
+            </>
+          ) : (
+            <>
+              <CategorySelector
+                label="Que lembrança vamos guardar?"
+                category={category}
+                theme={theme}
+                onChange={setCategory}
+              />
 
               <Text style={[styles.inputLabel, { color: theme.title }]}>
                 Quando aconteceu?
@@ -2103,9 +2275,10 @@ function AddModal({
                 />
               </Pressable>
               {calendarVisible && (
-                <MemoryCalendar
+                <DateCalendar
                   selectedDate={selectedDate}
                   visibleMonth={visibleMonth}
+                  range="past"
                   theme={theme}
                   onChangeMonth={setVisibleMonth}
                   onSelect={(date) => {
@@ -2975,7 +3148,30 @@ const styles = StyleSheet.create({
   planContent: { flex: 1 },
   planTitle: { color: palette.ink, fontSize: 14, fontWeight: "800" },
   planNote: { color: palette.muted, fontSize: 11, marginTop: 4, paddingRight: 10 },
-  planDate: { color: palette.rose, fontWeight: "800", fontSize: 11 },
+  planIdeaBadge: {
+    alignSelf: "flex-start",
+    minHeight: 24,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    marginTop: 8,
+  },
+  planIdeaBadgeText: { fontSize: 9, fontWeight: "800" },
+  planDateContainer: {
+    minWidth: 72,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 4,
+    marginLeft: 8,
+  },
+  planDate: {
+    color: palette.rose,
+    fontWeight: "800",
+    fontSize: 9,
+    textAlign: "right",
+  },
   doneText: { textDecorationLine: "line-through", color: "#9B9297" },
   dashedButton: {
     height: 58,
@@ -3275,6 +3471,16 @@ const styles = StyleSheet.create({
   datePickerText: { flex: 1 },
   datePickerValue: { fontSize: 12, fontWeight: "800" },
   datePickerHint: { color: palette.muted, fontSize: 9, marginTop: 3 },
+  clearPlannedDateButton: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: -7,
+    marginBottom: 17,
+    paddingVertical: 4,
+  },
+  clearPlannedDateText: { fontSize: 10, fontWeight: "800" },
   calendarCard: {
     borderRadius: 18,
     borderWidth: 1,
