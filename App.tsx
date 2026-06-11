@@ -1547,7 +1547,15 @@ function PlansScreen({
           </Text>
         </View>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${progress * 100}%`,
+                backgroundColor: theme.accent,
+              },
+            ]}
+          />
         </View>
         <Text style={styles.monthHint}>
           {monthlyGoal?.description ??
@@ -1573,8 +1581,8 @@ function PlansScreen({
               style={[
                 styles.bigCheck,
                 item.done && {
-                  backgroundColor: palette.sage,
-                  borderColor: palette.sage,
+                  backgroundColor: theme.accent,
+                  borderColor: theme.accent,
                 },
               ]}
             >
@@ -3446,7 +3454,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
     overflow: "hidden",
   },
-  progressFill: { height: "100%", backgroundColor: palette.blush, borderRadius: 3 },
+  progressFill: { height: "100%", borderRadius: 3 },
   monthHint: {
     color: "rgba(255,255,255,0.55)",
     fontSize: 11,
