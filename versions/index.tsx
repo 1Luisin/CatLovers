@@ -1,1 +1,1 @@
-export { default } from "../src/CatLoversApp";
+export { default } from "./IOS/App";

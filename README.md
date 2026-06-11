@@ -108,15 +108,13 @@ CatLovers/
 |       |-- README.md
 |       |-- chococat.png
 |       `-- cinnamoroll.png
-|-- src/
-|   `-- CatLoversApp.tsx # Implementação compartilhada integral
 |-- versions/
 |   |-- IOS/
-|   |   `-- App.tsx
+|   |   `-- App.tsx     # Aplicação completa para iOS
 |   |-- ANDROID/
-|   |   `-- App.tsx
+|   |   `-- App.tsx     # Aplicação completa para Android
 |   |-- WEB/
-|   |   `-- App.tsx
+|   |   `-- App.tsx     # Aplicação completa e responsiva para web
 |   |-- index.ios.tsx
 |   |-- index.android.tsx
 |   |-- index.web.tsx
@@ -131,13 +129,13 @@ CatLovers/
 `-- README.md
 ```
 
-A implementação está centralizada em `src/CatLoversApp.tsx` e é carregada por
-entradas específicas de iOS, Android e web. Dessa forma, as três versões usam
-exatamente os mesmos componentes, regras, persistência, animações e design.
+Cada plataforma possui uma aplicação completa em sua própria pasta. As regras
+e funcionalidades permanecem equivalentes, enquanto navegação, dimensões,
+superfícies e modais podem ser adaptados ao ambiente de uso.
 
-O crescimento do produto ainda exigirá a separação de telas, componentes,
-modelos, serviços, navegação, temas e regras de negócio em módulos próprios,
-sem duplicar a implementação entre plataformas.
+Essa independência exige que novas funcionalidades sejam implementadas nas três
+versões. Em uma evolução futura, modelos e serviços sem interface poderão ser
+extraídos para pacotes compartilhados sem voltar a unificar os designs.
 
 ## Persistência de dados
 
@@ -209,15 +207,19 @@ npm run web
 
 ### Entradas por plataforma
 
-O Expo seleciona automaticamente a entrada correspondente:
+O Expo seleciona automaticamente a aplicação correspondente:
 
 - iOS: `versions/IOS/App.tsx`;
 - Android: `versions/ANDROID/App.tsx`;
 - web: `versions/WEB/App.tsx`.
 
-As três entradas carregam a mesma implementação de
-`src/CatLoversApp.tsx`. Não existem versões reduzidas nem funcionalidades
-exclusivas de uma plataforma.
+Cada entrada carrega um código-fonte completo e dedicado. As funcionalidades
+são equivalentes, mas a apresentação é específica para o ambiente:
+
+- iOS mantém o design móvel original;
+- Android usa barra inferior fixa, alvos de toque maiores e modais móveis;
+- web usa navegação lateral em telas grandes, conteúdo amplo e modais
+  centralizados, com fallback responsivo para janelas estreitas.
 
 Para testar em um iPhone durante o desenvolvimento:
 
