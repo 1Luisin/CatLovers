@@ -581,9 +581,11 @@ function CategoryPill({ category }: { category: Category }) {
 function MemoryCard({
   item,
   theme,
+  onEdit,
 }: {
   item: CoupleItem;
   theme: AppTheme;
+  onEdit?: (item: CoupleItem) => void;
 }) {
   return (
     <View
@@ -596,7 +598,29 @@ function MemoryCard({
       <View style={styles.memoryBody}>
         <View style={styles.memoryTop}>
           <CategoryPill category={item.category} />
-          <Text style={styles.dateText}>{item.date}</Text>
+          <View style={styles.memoryTopActions}>
+            <Text style={styles.dateText}>{item.date}</Text>
+            {onEdit && (
+              <Pressable
+                accessibilityLabel={`Editar ${item.title}`}
+                onPress={() => onEdit(item)}
+                style={({ pressed }) => [
+                  styles.memoryEditButton,
+                  {
+                    backgroundColor: theme.accentSoft,
+                    borderColor: theme.border,
+                  },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Ionicons
+                  name="pencil-outline"
+                  size={14}
+                  color={theme.accent}
+                />
+              </Pressable>
+            )}
+          </View>
         </View>
         <Text style={[styles.memoryTitle, { color: theme.title }]}>
           {item.title}
@@ -1081,10 +1105,12 @@ function CollectionFilterModal({
 function CollectionScreen({
   items,
   onAdd,
+  onEdit,
   theme,
 }: {
   items: CoupleItem[];
   onAdd: () => void;
+  onEdit: (item: CoupleItem) => void;
   theme: AppTheme;
 }) {
   const [filters, setFilters] = useState(defaultCollectionFilters);
@@ -1264,7 +1290,12 @@ function CollectionScreen({
               />
             </View>
             {group.items.map((item) => (
-              <MemoryCard key={item.id} item={item} theme={theme} />
+              <MemoryCard
+                key={item.id}
+                item={item}
+                theme={theme}
+                onEdit={onEdit}
+              />
             ))}
           </View>
         ))}
@@ -1930,7 +1961,8 @@ function DateCalendar({
           const isoDate = toIsoDate(new Date(year, month, day));
           const selected = isoDate === selectedDate;
           const disabled =
-            range === "past" ? isoDate > todayIso : isoDate < todayIso;
+            isoDate !== selectedDate &&
+            (range === "past" ? isoDate > todayIso : isoDate < todayIso);
           return (
             <Pressable
               key={isoDate}
@@ -2016,12 +2048,14 @@ function CategorySelector({
 function AddModal({
   visible,
   mode,
+  editingItem,
   theme,
   onClose,
   onSave,
 }: {
   visible: boolean;
   mode: AddMode;
+  editingItem?: CoupleItem;
   theme: AppTheme;
   onClose: () => void;
   onSave: (item: CoupleItem) => void;
@@ -2038,20 +2072,38 @@ function AddModal({
   const [photoUri, setPhotoUri] = useState<string>();
   const [rating, setRating] = useState(0);
   const isPlan = mode === "plan";
+  const isEditingMemory =
+    mode === "memory" &&
+    Boolean(editingItem) &&
+    editingItem?.category !== "Plano";
 
   useEffect(() => {
     if (!visible) return;
-    setTitle("");
-    setNote("");
-    setCategory(mode === "plan" ? "Role" : "Filme");
     const today = new Date();
-    setSelectedDate(toIsoDate(today));
-    setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+    const editingDate = editingItem
+      ? editingItem.occurredOn ?? toIsoDate(getItemDate(editingItem))
+      : null;
+    const initialDate = editingDate ?? toIsoDate(today);
+    const initialDateValue = fromIsoDate(initialDate);
+
+    setTitle(editingItem?.title ?? "");
+    setNote(editingItem?.note ?? "");
+    setCategory(
+      editingItem && editingItem.category !== "Plano"
+        ? editingItem.category
+        : mode === "plan"
+          ? "Role"
+          : "Filme",
+    );
+    setSelectedDate(initialDate);
+    setVisibleMonth(
+      new Date(initialDateValue.getFullYear(), initialDateValue.getMonth(), 1),
+    );
     setCalendarVisible(false);
     setPlannedDate(undefined);
-    setPhotoUri(undefined);
-    setRating(0);
-  }, [mode, visible]);
+    setPhotoUri(editingItem?.photoUri);
+    setRating(editingItem?.rating ?? 0);
+  }, [editingItem, mode, visible]);
 
   const chooseMemoryPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -2080,7 +2132,8 @@ function AddModal({
     }
     const savedCategory: Category = isPlan ? "Plano" : category;
     onSave({
-      id: Date.now().toString(),
+      ...editingItem,
+      id: editingItem?.id ?? Date.now().toString(),
       title: title.trim(),
       note:
         note.trim() ||
@@ -2097,7 +2150,7 @@ function AddModal({
       occurredOn: isPlan ? undefined : selectedDate,
       plannedFor: isPlan ? plannedDate : undefined,
       photoUri: isPlan ? undefined : photoUri,
-      done: !isPlan,
+      done: editingItem?.done ?? !isPlan,
       rating: isPlan || rating === 0 ? undefined : rating,
       color: isPlan
         ? categoryMeta[category].color
@@ -2119,10 +2172,18 @@ function AddModal({
           <View style={styles.modalHeader}>
             <View>
               <Text style={[styles.modalEyebrow, { color: theme.accent }]}>
-                {isPlan ? "PLANEJAR JUNTOS" : "GUARDAR JUNTOS"}
+                {isPlan
+                  ? "PLANEJAR JUNTOS"
+                  : isEditingMemory
+                    ? "ATUALIZAR LEMBRANÇA"
+                    : "GUARDAR JUNTOS"}
               </Text>
               <Text style={[styles.modalTitle, { color: theme.title }]}>
-                {isPlan ? "Novo plano" : "Nova lembrança"}
+                {isPlan
+                  ? "Novo plano"
+                  : isEditingMemory
+                    ? "Editar lembrança"
+                    : "Nova lembrança"}
               </Text>
             </View>
             <Pressable
@@ -2464,10 +2525,16 @@ function AddModal({
               style={styles.saveGradient}
             >
               <Text style={styles.saveButtonText}>
-                {isPlan ? "Adicionar aos planos" : "Guardar lembrança"}
+                {isPlan
+                  ? "Adicionar aos planos"
+                  : isEditingMemory
+                    ? "Salvar alterações"
+                    : "Guardar lembrança"}
               </Text>
               <Ionicons
-                name={isPlan ? "calendar" : "heart"}
+                name={
+                  isPlan ? "calendar" : isEditingMemory ? "checkmark" : "heart"
+                }
                 size={17}
                 color={palette.paper}
               />
@@ -2493,6 +2560,7 @@ export default function App() {
   );
   const [modalVisible, setModalVisible] = useState(false);
   const [addMode, setAddMode] = useState<AddMode>("memory");
+  const [editingMemory, setEditingMemory] = useState<CoupleItem>();
   const [editProfileVisible, setEditProfileVisible] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -2541,7 +2609,13 @@ export default function App() {
   );
   const activeTheme = themes[activeProfile?.theme ?? "Romance"];
   const openAddModal = (mode: AddMode) => {
+    setEditingMemory(undefined);
     setAddMode(mode);
+    setModalVisible(true);
+  };
+  const openMemoryEditor = (item: CoupleItem) => {
+    setEditingMemory(item);
+    setAddMode("memory");
     setModalVisible(true);
   };
   const navigateToTab = useCallback(
@@ -2592,6 +2666,7 @@ export default function App() {
           items={items}
           theme={activeTheme}
           onAdd={() => openAddModal("memory")}
+          onEdit={openMemoryEditor}
         />
       );
     if (tab === "planos")
@@ -2711,11 +2786,22 @@ export default function App() {
       <AddModal
         visible={modalVisible}
         mode={addMode}
+        editingItem={editingMemory}
         theme={activeTheme}
-        onClose={() => setModalVisible(false)}
-        onSave={(item) => {
-          setItems((current) => [item, ...current]);
+        onClose={() => {
           setModalVisible(false);
+          setEditingMemory(undefined);
+        }}
+        onSave={(item) => {
+          setItems((current) =>
+            editingMemory
+              ? current.map((currentItem) =>
+                  currentItem.id === item.id ? item : currentItem,
+                )
+              : [item, ...current],
+          );
+          setModalVisible(false);
+          setEditingMemory(undefined);
         }}
       />
       <EditProfileModal
@@ -2964,6 +3050,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  memoryTopActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  memoryEditButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   categoryPill: {
     flexDirection: "row",
