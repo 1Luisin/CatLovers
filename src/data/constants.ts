@@ -3,8 +3,21 @@ import { palette } from "../theme/themes";
 
 export const PLANS_MONTH_KEY = "2026-06";
 export const PLANS_MONTH_LABEL = "Junho 2026";
+export const RELATIONSHIP_START_DATE = "2026-06-12";
 
 export const getCurrentMonthKey = () => new Date().toISOString().slice(0, 7);
+
+export const getDaysTogether = (currentDate = new Date()) => {
+  const [year, month, day] = RELATIONSHIP_START_DATE.split("-").map(Number);
+  const startDate = Date.UTC(year, month - 1, day);
+  const today = Date.UTC(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    currentDate.getDate(),
+  );
+
+  return Math.max(0, Math.floor((today - startDate) / 86_400_000) + 1);
+};
 
 export const initialItems: CoupleItem[] = [
   {

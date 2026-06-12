@@ -45,6 +45,7 @@ import {
 import {
   initialItems,
   initialMonthlyGoals,
+  getDaysTogether,
   PLANS_MONTH_KEY,
   PLANS_MONTH_LABEL,
 } from "../../src/data/constants";
@@ -2040,6 +2041,7 @@ function ProfileScreen({
   onSwitchProfile: () => void;
 }) {
   const completed = items.filter((item) => item.done).length;
+  const daysTogether = getDaysTogether();
   const accent = theme.accent;
 
   return (
@@ -2121,10 +2123,10 @@ function ProfileScreen({
         <View style={styles.profileStatDivider} />
         <View style={styles.profileStat}>
           <Text style={[styles.profileStatValue, { color: theme.title }]}>
-            1
+            {daysTogether}
           </Text>
           <Text style={[styles.profileStatLabel, { color: theme.muted }]}>
-             Dias junto
+            {daysTogether === 1 ? "dia junto" : "dias juntos"}
           </Text>
         </View>
       </View>
