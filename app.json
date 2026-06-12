@@ -30,6 +30,11 @@
           "microphonePermission": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7bf40cdb-53a4-4e98-acdb-5fd64cc55725"
+      }
+    }
   }
 }
