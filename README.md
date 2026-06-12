@@ -1,81 +1,65 @@
 # CatLovers
 
-CatLovers é um aplicativo pessoal para Luis e Letícia registrarem memórias,
-organizarem planos e personalizarem a experiência de cada perfil.
+Aplicativo Expo/React Native para Luis e Letícia registrarem memórias, planos e
+metas mensais. O projeto possui interfaces próprias para iOS, Android e Web,
+com regras de domínio, API e cache compartilhadas.
 
-O app usa Expo/React Native em Android, iOS e web. A entrada continua sendo pela
-escolha entre os perfis de Luis e Letícia. Não existe login, senha, JWT,
-cadastro por e-mail ou refresh token nesta versão.
+Não há login, cadastro, JWT ou perfil privado. Os temas disponíveis são
+`Light`, `Dark`, `Cinnamoroll` e `Chococat`.
 
 ## Arquitetura
 
 ```text
 CatLovers/
-|-- assets/themes/              # Imagens dos temas
 |-- src/
-|   |-- components/             # Componentes visuais compartilhados
-|   |-- data/                   # Perfis e dados iniciais
-|   |-- screens/                # Contêineres de telas compartilhados
-|   |-- services/
-|   |   |-- apiClient.ts        # HTTP, mapeamento e upload
-|   |   `-- storageService.ts   # Cache AsyncStorage
-|   |-- theme/themes.ts         # Paletas e assets
-|   `-- types/index.ts          # Tipos de domínio
-|-- versions/                   # Interfaces específicas de iOS, Android e web
-|-- backend/
-|   |-- src/routes/             # Endpoints Express
-|   |-- src/repositories/       # Consultas PostgreSQL
-|   |-- src/scripts/            # Seed idempotente
-|   |-- sql/                    # Melhorias opcionais, não aplicadas
-|   `-- uploads/                # Arquivos locais enviados
-`-- App.tsx                     # Entrada/orquestração do Expo
+|   |-- components/
+|   |   |-- common/              # Componentes visuais por plataforma
+|   |   `-- forms/               # Formulários e modais por plataforma
+|   |-- data/                    # Constantes e opções da interface
+|   |-- features/
+|   |   |-- goals/               # Metas mensais
+|   |   |-- home/                # Tela inicial
+|   |   |-- memories/            # Memórias, filtros e uploads
+|   |   |-- plans/               # Planos e conclusão
+|   |   |-- profiles/            # Perfis e foto de perfil
+|   |   `-- settings/            # Preferências por perfil
+|   |-- platforms/
+|   |   |-- android/             # Composição e estilos Android
+|   |   |-- ios/                 # Composição e estilos iOS
+|   |   `-- web/                 # Composição e estilos Web
+|   |-- services/                # Cliente HTTP e cache AsyncStorage
+|   |-- theme/                   # Fonte única de temas
+|   |-- types/                   # Tipos de domínio
+|   `-- utils/                   # Datas, imagens, plataforma e validação
+|-- versions/                    # Entradas estáveis de cada plataforma
+|-- backend/                     # API Node/Express e PostgreSQL
+|-- app.json                     # Configuração Expo
+`-- eas.json                     # Perfis de build EAS
 ```
 
-O AsyncStorage agora funciona como cache: o app carrega o conteúdo local
-primeiro, tenta sincronizar com a API e mantém o cache quando a API está
-indisponível. Escritas atualizam a interface localmente e usam o retorno da API
-como fonte oficial quando a chamada funciona.
+`versions/index.tsx` usa `Platform.OS` para selecionar a entrada correta.
+Os arquivos `versions/IOS/App.tsx`, `versions/ANDROID/App.tsx` e
+`versions/WEB/App.tsx` continuam separados e encaminham para a composição
+visual correspondente em `src/platforms`.
+
+Os hooks em `src/features` centralizam carregamento, cache, operações
+otimistas, persistência e uploads. Os componentes visuais consomem esses hooks
+sem duplicar as regras de API entre plataformas.
 
 ## Requisitos
 
 - Node.js 20 ou superior
 - npm
-- PostgreSQL com as tabelas já criadas
-- Expo Go, emulador ou navegador
-
-## Frontend
-
-```bash
-npm ci
-copy .env.example .env
-npm start
-```
-
-O `.env` do frontend usa:
-
-```env
-EXPO_PUBLIC_API_URL=http://localhost:3333
-```
-
-No Android Emulator, use normalmente `http://10.0.2.2:3333`. Em celular físico,
-use o IP da máquina na mesma rede, por exemplo
-`http://192.168.1.20:3333`. Reinicie o Metro depois de alterar a variável.
-
-Comandos disponíveis:
-
-```bash
-npm run android
-npm run ios
-npm run web
-npm run typecheck
-```
+- PostgreSQL com as tabelas do projeto
+- Expo Go, emulador Android, simulador iOS ou navegador
+- macOS com Xcode para executar o simulador iOS localmente
 
 ## Backend
 
-```bash
+```powershell
 cd backend
 npm install
-copy .env.example .env
+Copy-Item .env.example .env
 ```
 
 Configure `backend/.env`:
@@ -87,116 +71,114 @@ UPLOAD_DIR=uploads
 PUBLIC_BASE_URL=http://localhost:3333
 ```
 
-Depois execute:
+Inicie o banco configurado e execute:
 
-```bash
+```powershell
 npm run seed
 npm run dev
 ```
 
-O seed usa `ON CONFLICT (code) DO NOTHING`, cria somente os perfis ausentes e
-não altera nem remove tabelas. A API gera UUIDs com `crypto.randomUUID()`.
+O seed é idempotente e não remove tabelas. Para validar o backend:
 
-Verificações:
-
-```bash
+```powershell
 npm run typecheck
 npm run build
-curl http://localhost:3333/health
 ```
 
-## Endpoints
+## Frontend
 
-- `GET /health`
-- `GET|POST /profiles`
-- `GET|PUT /profiles/:id`
-- `PATCH /profiles/:id/settings`
-- `POST /profiles/:id/photo`
-- `GET|POST /items`
-- `GET|PUT|DELETE /items/:id`
-- `PATCH /items/:id/toggle-done`
-- `POST /items/:id/photo`
-- `GET /monthly-goals`
-- `GET|PUT /monthly-goals/:monthKey`
-- `GET /uploads/:fileName`
+Na raiz do projeto:
 
-Uploads aceitam JPEG, PNG e WebP de até 10 MB. Uma nova foto de item substitui
-a anterior e o arquivo antigo é removido.
-
-## Testar no DBeaver
-
-1. Abra a conexão usada em `DATABASE_URL`.
-2. Execute `npm run seed` no backend.
-3. Confirme os perfis:
-
-```sql
-SELECT id, code, name, theme FROM profiles ORDER BY code;
+```powershell
+npm ci
+Copy-Item .env.example .env
 ```
 
-4. Com a API em execução, crie ou edite dados no app e consulte:
+Configure a URL da API:
 
-```sql
-SELECT * FROM couple_items ORDER BY created_at DESC;
-SELECT * FROM monthly_goals ORDER BY month_key DESC;
-SELECT * FROM item_photos ORDER BY created_at DESC;
+```env
+EXPO_PUBLIC_API_URL=http://localhost:3333
 ```
 
-O arquivo `backend/sql/optional_improvements.sql` contém apenas índices
-opcionais e nunca é executado automaticamente.
+Use `localhost` no navegador e no simulador iOS. No Android Emulator, use
+`http://10.0.2.2:3333`. Em aparelho físico, use o IP da máquina na mesma rede,
+por exemplo `http://192.168.1.20:3333`. Reinicie o Metro após alterar o `.env`.
 
-## Testar upload
+### Web
 
-Com um UUID de perfil existente:
+```powershell
+npm run web
+```
+
+Para gerar o bundle estático:
+
+```powershell
+npm run export:web
+```
+
+### Android
+
+Com um emulador aberto ou aparelho conectado:
+
+```powershell
+npm run android
+```
+
+Também é possível executar `npm start` e abrir o projeto no Expo Go. Para gerar
+um APK interno pelo EAS:
+
+```powershell
+npx eas-cli login
+npx eas-cli build --platform android --profile preview
+```
+
+O perfil `preview` em `eas.json` usa `buildType: apk`. Produção gera Android App
+Bundle com o perfil `production`.
+
+### iOS
+
+No macOS com Xcode e um simulador disponível:
 
 ```bash
-curl -X POST http://localhost:3333/profiles/UUID/photo \
-  -F "photo=@C:/caminho/foto.jpg"
+npm run ios
 ```
 
-Para um item:
+Em um iPhone, execute `npm start` e abra o QR code no Expo Go. Para um build
+interno assinado pelo EAS:
 
 ```bash
-curl -X POST http://localhost:3333/items/UUID/photo \
-  -F "photo=@C:/caminho/memoria.png"
+npx eas-cli login
+npx eas-cli build --platform ios --profile preview
 ```
 
-A resposta deve trazer uma URL em `/uploads/...`. Abra essa URL no navegador e
-confirme o registro em `profiles.photo_url` ou `item_photos`.
+O simulador iOS não pode ser executado localmente no Windows, mas o build EAS
+pode ser solicitado a partir do Windows.
 
-## Temas e regras preservadas
+## Verificações
 
-As únicas aparências disponíveis são:
+```powershell
+npm run typecheck
+npm run export:web
+npm run export:android
+npm run export:ios
+```
 
-- Light;
-- Dark;
-- Cinnamoroll;
-- Chococat.
+## Regras preservadas
 
-Valores gravados por versões antigas são migrados automaticamente ao carregar
-o cache ou mapear respostas da API:
-
-- `Romance`, `Lavanda` e `Floresta` viram `Light`;
-- `Noite` vira `Dark`.
-
-- categoria `Plano` representa plano; as demais representam memória;
-- memórias nascem concluídas e podem ter avaliação e foto;
-- planos nascem pendentes e podem ter data prevista;
-- concluir um plano preenche `completed_on`;
+- itens cuja categoria é `Plano` são planos; os demais são memórias;
+- memórias começam concluídas e podem ter nota de 1 a 5 e imagem;
+- planos começam pendentes, podem ter `planned_for` e recebem `completed_on`
+  quando concluídos;
 - desmarcar um plano limpa `completed_on`;
 - metas mensais usam `YYYY-MM`;
-- cada perfil mantém tema, foto e preferências próprias.
+- tema, foto e preferências pertencem ao perfil selecionado;
+- memórias, planos e metas são compartilhados entre Luis e Letícia;
+- API e uploads usam `EXPO_PUBLIC_API_URL`;
+- AsyncStorage funciona como cache local.
 
-A antiga opção de perfil privado foi removida. Memórias, planos e metas são
-dados compartilhados entre Luis e Letícia pela API e pelo banco. A escolha de
-perfil serve para selecionar identidade visual e preferências, não para criar
-uma área isolada ou autenticada.
+## Limitações
 
-## Limitações atuais
-
-- não há autenticação ou autorização; a API deve ficar em ambiente privado;
-- não há login, senha, JWT, cadastro de conta ou refresh token;
-- uploads usam o disco local do servidor, não armazenamento em nuvem;
-- não existe fila offline ou resolução de conflitos;
-- notificações e pergunta semanal continuam apenas como preferências;
-- as interfaces específicas de plataforma ainda mantêm parte da composição
-  visual duplicada enquanto os tipos, dados e serviços já são compartilhados.
+- a API não possui autenticação ou autorização e deve ficar em ambiente privado;
+- uploads usam o disco local do servidor;
+- não há fila offline nem resolução automática de conflitos;
+- notificações e pergunta semanal permanecem apenas como preferências.

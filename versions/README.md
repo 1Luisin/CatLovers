@@ -1,23 +1,20 @@
-# Aplicações por plataforma
+# Entradas por plataforma
 
-O CatLovers possui três implementações completas e independentes:
+As entradas públicas continuam separadas:
 
-- `IOS/App.tsx`: preserva o design móvel original para iPhone;
-- `ANDROID/App.tsx`: mantém as funcionalidades com navegação, áreas de toque,
-  elevação e modais adaptados ao Android;
-- `WEB/App.tsx`: mantém as funcionalidades com layout responsivo, navegação
-  lateral em desktop, conteúdo amplo e modais centralizados.
+- `IOS/App.tsx`;
+- `ANDROID/App.tsx`;
+- `WEB/App.tsx`.
 
-Nenhuma dessas aplicações importa a implementação de outra plataforma. Cada
-arquivo contém telas, estado, persistência, formulários, filtros, calendário,
-temas e animações completos.
+Cada entrada exporta a composição visual correspondente em `src/platforms`.
+Telas, estilos e componentes com diferenças visuais permanecem específicos de
+iOS, Android e Web. Hooks, serviços, tipos, temas e regras de domínio ficam em
+`src` e são compartilhados.
 
-Os arquivos `index.ios.tsx`, `index.android.tsx` e `index.web.tsx` usam a
-resolução de plataforma do React Native para selecionar a aplicação correta
-durante a execução e o build.
+`index.tsx` seleciona automaticamente a aplicação usando `Platform.OS`. Os
+arquivos `index.ios.tsx`, `index.android.tsx` e `index.web.tsx` continuam
+disponíveis para a resolução nativa do bundler.
 
-## Regra de manutenção
-
-Mudanças de regra de negócio ou novas funcionalidades devem ser avaliadas e
-aplicadas nas três implementações para manter paridade. Ajustes estritamente
-visuais podem permanecer específicos da plataforma.
+Mudanças de regra de negócio devem ser feitas nos hooks, serviços ou utilitários
+compartilhados. Ajustes de layout devem ser feitos no arquivo da plataforma
+correspondente.

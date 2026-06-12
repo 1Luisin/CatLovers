@@ -7,13 +7,15 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.catlovers.app"
+      "bundleIdentifier": "com.catlovers.app",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#F8EFE8"
       },
-      "package": "com.catlovers.app"
+      "package": "com.catlovers.app",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro"
