@@ -15,7 +15,6 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
@@ -301,10 +300,14 @@ function ProfileAvatar({
   profile,
   size = 72,
   border = false,
+  borderWidth = 4,
+  initialLength = 1,
 }: {
   profile: Profile;
   size?: number;
   border?: boolean;
+  borderWidth?: number;
+  initialLength?: number;
 }) {
   return (
     <View
@@ -315,7 +318,7 @@ function ProfileAvatar({
           height: size,
           borderRadius: size / 2,
           backgroundColor: profile.color,
-          borderWidth: border ? 4 : 0,
+          borderWidth: border ? borderWidth : 0,
         },
       ]}
     >
@@ -323,7 +326,7 @@ function ProfileAvatar({
         <Image source={{ uri: profile.photoUri }} style={styles.avatarImage} />
       ) : (
         <Text style={[styles.profileInitial, { fontSize: size * 0.34 }]}>
-          {profile.name.charAt(0).toUpperCase()}
+          {profile.name.trim().slice(0, initialLength).toUpperCase()}
         </Text>
       )}
     </View>
@@ -432,6 +435,98 @@ function CategoryPill({ category }: { category: Category }) {
   );
 }
 
+function MemoryPhotoViewer({
+  item,
+  theme,
+}: {
+  item: CoupleItem;
+  theme: AppTheme;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  if (!item.photoUri) return null;
+
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Ampliar imagem de ${item.title}`}
+        onPress={() => setVisible(true)}
+        style={({ pressed }) => [
+          styles.memoryPhotoButton,
+          pressed && styles.pressed,
+        ]}
+      >
+        <Image
+          source={{ uri: item.photoUri }}
+          resizeMode="cover"
+          style={styles.memoryPhoto}
+        />
+        <View style={styles.memoryPhotoBadge}>
+          <Ionicons name="expand-outline" size={13} color={palette.paper} />
+          <Text style={styles.memoryPhotoBadgeText}>Ver imagem</Text>
+        </View>
+      </Pressable>
+
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
+        <View style={styles.photoViewerOverlay}>
+          <Pressable
+            accessibilityLabel="Fechar imagem ampliada"
+            onPress={() => setVisible(false)}
+            style={styles.photoViewerDismiss}
+          />
+          <View
+            style={[
+              styles.photoViewerCard,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.photoViewerHeader,
+                { borderColor: theme.border },
+              ]}
+            >
+              <Text
+                numberOfLines={1}
+                style={[styles.photoViewerTitle, { color: theme.title }]}
+              >
+                {item.title}
+              </Text>
+              <Pressable
+                accessibilityLabel="Fechar imagem"
+                onPress={() => setVisible(false)}
+                style={[
+                  styles.photoViewerClose,
+                  { backgroundColor: theme.accentSoft },
+                ]}
+              >
+                <Ionicons name="close" size={20} color={theme.accent} />
+              </Pressable>
+            </View>
+            <Image
+              source={{ uri: item.photoUri }}
+              resizeMode="contain"
+              style={[
+                styles.photoViewerImage,
+                { backgroundColor: theme.background },
+              ]}
+            />
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
 function MemoryCard({
   item,
   theme,
@@ -487,13 +582,7 @@ function MemoryCard({
         >
           {item.note}
         </Text>
-        {item.photoUri && (
-          <Image
-            source={{ uri: item.photoUri }}
-            resizeMode="cover"
-            style={styles.memoryPhoto}
-          />
-        )}
+        <MemoryPhotoViewer item={item} theme={theme} />
         <View style={styles.memoryFooter}>
           {item.rating ? (
             <View style={styles.ratingRow}>
@@ -520,11 +609,13 @@ function MemoryCard({
 function HomeScreen({
   items,
   profile,
+  profiles,
   onViewAll,
   theme,
 }: {
   items: CoupleItem[];
   profile: Profile;
+  profiles: Profile[];
   onViewAll: () => void;
   theme: AppTheme;
 }) {
@@ -558,18 +649,20 @@ function HomeScreen({
         </Text>
         <View style={styles.heroFooter}>
           <View style={styles.avatarStack}>
-            <View style={[styles.avatar, { backgroundColor: "#F6C7A8" }]}>
-              <Text style={styles.avatarText}>LE</Text>
-            </View>
-            <View
-              style={[
-                styles.avatar,
-                styles.avatarOverlap,
-                { backgroundColor: "#C5B5DD" },
-              ]}
-            >
-              <Text style={styles.avatarText}>LU</Text>
-            </View>
+            {profiles.slice(0, 2).map((coupleProfile, index) => (
+              <View
+                key={coupleProfile.id}
+                style={index > 0 ? styles.avatarOverlap : undefined}
+              >
+                <ProfileAvatar
+                  profile={coupleProfile}
+                  size={38}
+                  border
+                  borderWidth={2}
+                  initialLength={2}
+                />
+              </View>
+            ))}
           </View>
           <View style={styles.heroDate}>
             <Ionicons name="calendar-clear-outline" size={15} color="#FFF" />
@@ -1802,13 +1895,26 @@ function SettingSwitch({
           {description}
         </Text>
       </View>
-      <Switch
-        {...(Platform.OS === "web" ? { activeThumbColor: accent } : {})}
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ false: "#DDD4D8", true: `${accent}75` }}
-        thumbColor={value ? accent : "#F7F4F5"}
-      />
+      <Pressable
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityState={{ checked: value }}
+        onPress={() => onChange(!value)}
+        style={[
+          styles.settingToggle,
+          { backgroundColor: value ? `${accent}75` : "#DDD4D8" },
+        ]}
+      >
+        <View
+          style={[
+            styles.settingToggleThumb,
+            {
+              backgroundColor: value ? accent : "#F7F4F5",
+              transform: [{ translateX: value ? 18 : 0 }],
+            },
+          ]}
+        />
+      </Pressable>
     </View>
   );
 }
@@ -1922,6 +2028,7 @@ function ProfileScreen({
   theme,
   onEdit,
   onUpdate,
+  onThemeChange,
   onSwitchProfile,
 }: {
   profile: Profile;
@@ -1929,6 +2036,7 @@ function ProfileScreen({
   theme: AppTheme;
   onEdit: () => void;
   onUpdate: (profile: Profile) => void;
+  onThemeChange: (theme: ThemeName) => void;
   onSwitchProfile: () => void;
 }) {
   const completed = items.filter((item) => item.done).length;
@@ -2040,7 +2148,7 @@ function ProfileScreen({
             return (
               <Pressable
                 key={themeName}
-                onPress={() => onUpdate({ ...profile, theme: themeName })}
+                onPress={() => onThemeChange(themeName)}
                 style={styles.themeOption}
               >
                 <View
@@ -3011,6 +3119,7 @@ function AddModal({
 export default function App() {
   const [tab, setTab] = useState<Tab>("inicio");
   const screenOpacity = useRef(new Animated.Value(1)).current;
+  const themeOpacity = useRef(new Animated.Value(1)).current;
   const screenTranslateX = useRef(new Animated.Value(0)).current;
   const previousTab = useRef<Tab>("inicio");
   const transitionDirection = useRef(1);
@@ -3151,6 +3260,28 @@ export default function App() {
       showSyncError();
     }
   };
+  const handleThemeChange = (themeName: ThemeName) => {
+    if (!activeProfile || activeProfile.theme === themeName) return;
+
+    themeOpacity.stopAnimation();
+    Animated.timing(themeOpacity, {
+      toValue: 0,
+      duration: 150,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: Platform.OS !== "web",
+    }).start(({ finished }) => {
+      if (!finished) return;
+      void handleProfileSave({ ...activeProfile, theme: themeName }, true);
+      setTimeout(() => {
+        Animated.timing(themeOpacity, {
+          toValue: 1,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: Platform.OS !== "web",
+        }).start();
+      }, 30);
+    });
+  };
   const handleItemSave = async (item: CoupleItem) => {
     const editing = Boolean(editingMemory);
     const optimistic = { ...item, createdByProfileId: activeProfileId ?? undefined };
@@ -3244,6 +3375,7 @@ export default function App() {
           theme={activeTheme}
           onEdit={() => setEditProfileVisible(true)}
           onUpdate={(updated) => void handleProfileSave(updated, true)}
+          onThemeChange={handleThemeChange}
           onSwitchProfile={() => {
             setTab("inicio");
             setActiveProfileId(null);
@@ -3254,11 +3386,12 @@ export default function App() {
       <HomeScreen
         items={items}
         profile={activeProfile}
+        profiles={profiles}
         theme={activeTheme}
         onViewAll={() => navigateToTab("colecao")}
       />
     );
-  }, [activeProfile, activeTheme, items, monthlyGoals, navigateToTab, tab]);
+  }, [activeProfile, activeTheme, items, monthlyGoals, navigateToTab, profiles, tab]);
 
   if (!loaded) {
     return (
@@ -3285,8 +3418,15 @@ export default function App() {
       style={[styles.safeArea, { backgroundColor: activeTheme.background }]}
     >
       <StatusBar style={activeTheme.isDark ? "light" : "dark"} />
-      <View
-        style={[styles.appShell, { backgroundColor: activeTheme.background }]}
+      <Animated.View
+        testID="app-theme-transition"
+        style={[
+          styles.appShell,
+          {
+            backgroundColor: activeTheme.background,
+            opacity: themeOpacity,
+          },
+        ]}
       >
         <ThemeDecorations theme={activeTheme} />
         <Animated.View
@@ -3334,7 +3474,7 @@ export default function App() {
             );
           })}
         </View>
-      </View>
+      </Animated.View>
       <AddModal
         visible={modalVisible}
         mode={addMode}
@@ -3633,12 +3773,66 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     marginTop: 5,
   },
-  memoryPhoto: {
+  memoryPhotoButton: {
     width: "100%",
     height: 150,
     borderRadius: 15,
     marginTop: 13,
+    overflow: "hidden",
+    position: "relative",
   },
+  memoryPhoto: { width: "100%", height: "100%" },
+  memoryPhotoBadge: {
+    position: "absolute",
+    right: 9,
+    bottom: 9,
+    minHeight: 28,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(32,25,29,0.72)",
+  },
+  memoryPhotoBadgeText: {
+    color: palette.paper,
+    fontSize: 9,
+    fontWeight: "800",
+  },
+  photoViewerOverlay: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "rgba(24,19,22,0.84)",
+  },
+  photoViewerDismiss: { ...StyleSheet.absoluteFillObject },
+  photoViewerCard: {
+    width: "100%",
+    maxWidth: 780,
+    height: "82%",
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: "hidden",
+    zIndex: 1,
+  },
+  photoViewerHeader: {
+    minHeight: 58,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+  },
+  photoViewerTitle: { flex: 1, fontSize: 15, fontWeight: "900" },
+  photoViewerClose: {
+    width: 36,
+    height: 36,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoViewerImage: { flex: 1, width: "100%" },
   memoryFooter: {
     flexDirection: "row",
     alignItems: "center",
@@ -4673,6 +4867,22 @@ const styles = StyleSheet.create({
     marginRight: 11,
   },
   settingText: { flex: 1, paddingRight: 8 },
+  settingToggle: {
+    width: 46,
+    height: 28,
+    borderRadius: 14,
+    padding: 3,
+    justifyContent: "center",
+  },
+  settingToggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    shadowColor: palette.ink,
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
   settingLabel: { color: palette.ink, fontSize: 12, fontWeight: "800" },
   settingDescription: {
     color: palette.muted,
