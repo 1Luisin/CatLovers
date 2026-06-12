@@ -69,6 +69,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
           ? {}
           : { "Content-Type": "application/json" }),
         ...init.headers,
+        "ngrok-skip-browser-warning": "true",
       },
     });
     const text = await response.text();

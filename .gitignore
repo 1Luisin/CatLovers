@@ -11,3 +11,4 @@ backend/.env
 backend/dist/
 backend/uploads/*
 !backend/uploads/.gitkeep
+package-lock.json
