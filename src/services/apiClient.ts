@@ -262,10 +262,53 @@ export const getMonthlyGoal = async (monthKey: string) =>
 export const upsertMonthlyGoal = async (
   monthKey: string,
   payload: Pick<MonthlyGoal, "title" | "description">,
+  createdByProfileId?: string,
 ) =>
   mapGoal(
     await request<ApiGoal>(`/monthly-goals/${monthKey}`, {
       method: "PUT",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        created_by_profile_id: createdByProfileId,
+      }),
     }),
   );
+
+export type NotificationSubscriptionPayload = {
+  deviceId: string;
+  profileId: string;
+  platform: "android" | "ios" | "web";
+  expoPushToken?: string;
+  webPushSubscription?: {
+    endpoint: string;
+    expirationTime?: number | null;
+    keys?: {
+      p256dh?: string;
+      auth?: string;
+    };
+  };
+};
+
+export const getWebPushPublicKey = async () =>
+  (
+    await request<{ publicKey: string }>(
+      "/notifications/web-push-public-key",
+    )
+  ).publicKey;
+
+export const registerNotificationSubscription = (
+  payload: NotificationSubscriptionPayload,
+) =>
+  request("/notifications/subscriptions", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const unregisterNotificationSubscription = (
+  deviceId: string,
+  profileId: string,
+) =>
+  request<void>("/notifications/subscriptions", {
+    method: "DELETE",
+    body: JSON.stringify({ deviceId, profileId }),
+  });

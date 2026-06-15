@@ -20,6 +20,7 @@ import { HomeScreen } from "../../features/home/screens/HomeScreen.web";
 import { AddModal } from "../../components/forms/AddModal.web";
 import { CollectionScreen } from "../../features/memories/screens/CollectionScreen.web";
 import { useCoupleItems } from "../../features/memories/hooks/useCoupleItems";
+import { useWebNotifications } from "../../features/notifications/hooks/useWebNotifications";
 import { PlansScreen } from "../../features/plans/screens/PlansScreen.web";
 import {
   EditProfileModal,
@@ -84,6 +85,7 @@ export default function App() {
     refreshProfiles,
     saveProfile,
   } = useProfiles(showSyncError);
+  const notificationState = useWebNotifications(activeProfile, saveProfile);
   const { items, itemsLoaded, refreshItems, togglePlan, saveItem } =
     useCoupleItems(showSyncError);
   const { monthlyGoals, goalsLoaded, refreshMonthlyGoals, saveGoal } =
@@ -152,7 +154,7 @@ export default function App() {
   };
   const handleGoalSave = (goal: MonthlyGoal) => {
     setMonthlyGoalVisible(false);
-    void saveGoal(goal);
+    void saveGoal(goal, activeProfileId ?? undefined);
   };
   const navigateToTab = useCallback(
     (nextTab: Tab) => {
@@ -218,6 +220,14 @@ export default function App() {
           theme={activeTheme}
           onEdit={() => setEditProfileVisible(true)}
           onUpdate={(updated) => void saveProfile(updated, true)}
+          notificationsEnabled={notificationState.enabled}
+          onNotificationChange={notificationState.setEnabled}
+          notificationMessage={notificationState.message}
+          notificationActionLabel={notificationState.actionLabel}
+          notificationBusy={notificationState.busy}
+          onNotificationPermissionAction={
+            notificationState.handlePermissionAction
+          }
           onThemeChange={handleThemeChange}
           onSwitchProfile={() => {
             setTab("inicio");
@@ -234,7 +244,16 @@ export default function App() {
         onViewAll={() => navigateToTab("colecao")}
       />
     );
-  }, [activeProfile, activeTheme, items, monthlyGoals, navigateToTab, profiles, tab]);
+  }, [
+    activeProfile,
+    activeTheme,
+    items,
+    monthlyGoals,
+    navigateToTab,
+    notificationState,
+    profiles,
+    tab,
+  ]);
 
   if (!loaded) {
     return (

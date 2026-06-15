@@ -1,6 +1,6 @@
 # Privacidade e dados do CatLovers
 
-Última atualização: 11 de junho de 2026.
+Última atualização: 15 de junho de 2026.
 
 ## 1. Escopo
 
@@ -22,6 +22,7 @@ O CatLovers pode tratar:
 - lembranças, descrições, categorias, datas, avaliações e imagens;
 - planos, datas previstas, datas de conclusão e metas mensais;
 - identificadores técnicos necessários para sincronização;
+- identificador da instalação e token ou assinatura de notificação;
 - registros técnicos de segurança, erros e acesso, quando implementados.
 
 O aplicativo não deve solicitar dados que não sejam necessários para suas
@@ -43,6 +44,15 @@ uma separação de acesso ou de dados.
 
 Valores antigos de aparência são migrados automaticamente: Romance, Lavanda e
 Floresta passam a Light, enquanto Noite passa a Dark.
+
+Quando os lembretes são ativados, o CatLovers registra um identificador
+aleatório da instalação, o perfil associado, a plataforma e o Expo Push Token
+ou a assinatura Web Push. Também mantém o controle técnico dos lembretes já
+enviados para evitar duplicidade. Esses dados são usados somente para avisar
+sobre metas, planos, lembranças e eventos próximos.
+
+O usuário pode desativar os lembretes no perfil e também revogar a permissão
+nas configurações do Android, iPhone ou navegador.
 
 ## 4. Segurança futura
 

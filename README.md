@@ -176,9 +176,33 @@ npm run export:ios
 - API e uploads usam `EXPO_PUBLIC_API_URL`;
 - AsyncStorage funciona como cache local.
 
+## Notificações
+
+O toggle **Lembretes do casal** solicita a permissão específica de Android,
+iOS ou Web. Depois da autorização, o app envia a notificação de teste
+`Notificação ativa :3` e registra o aparelho na API.
+
+As notificações incluem:
+
+- criação de uma meta mensal;
+- criação de um plano;
+- criação de uma lembrança;
+- aviso às 09:00 do dia anterior a um plano com data definida.
+
+Como os planos ainda não possuem horário, o lembrete considera o evento às
+09:00 no fuso `America/Sao_Paulo`. A pergunta semanal permanece vinculada à
+preferência existente e poderá usar o mesmo canal quando sua configuração de
+dia, horário e conteúdo for implementada.
+
+Android e iOS usam Expo Push Notifications. Builds EAS devem possuir as
+credenciais de push configuradas para cada plataforma. A Web usa Push API,
+Service Worker e chaves VAPID geradas automaticamente e armazenadas no banco.
+As tabelas necessárias são criadas de forma idempotente na inicialização da
+API; o SQL equivalente está em `backend/sql/notifications.sql`.
+
 ## Limitações
 
 - a API não possui autenticação ou autorização e deve ficar em ambiente privado;
 - uploads usam o disco local do servidor;
 - não há fila offline nem resolução automática de conflitos;
-- notificações e pergunta semanal permanecem apenas como preferências.
+- a pergunta semanal ainda não possui configuração de conteúdo ou agenda.

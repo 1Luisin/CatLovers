@@ -4,6 +4,7 @@ import {
   listMonthlyGoals,
   upsertMonthlyGoal,
 } from "../repositories/monthlyGoalsRepository.js";
+import { notifyMonthlyGoalCreated } from "../services/notificationService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { isMonthKey, requireFields } from "../utils/http.js";
 
@@ -33,12 +34,24 @@ monthlyGoalsRouter.put(
       return response.status(400).json({ error: "monthKey deve usar o formato YYYY-MM." });
     }
     if (!requireFields(request.body, ["title", "description"], response)) return;
-    response.json(
-      await upsertMonthlyGoal(
-        monthKey,
-        request.body.title,
-        request.body.description,
-      ),
+    const existing = await findMonthlyGoal(monthKey);
+    const goal = await upsertMonthlyGoal(
+      monthKey,
+      request.body.title,
+      request.body.description,
     );
+    if (!goal) throw new Error("A meta criada não pôde ser consultada.");
+    response.json(goal);
+    if (!existing) {
+      void notifyMonthlyGoalCreated(
+        goal.title,
+        monthKey,
+        request.body.created_by_profile_id
+          ? String(request.body.created_by_profile_id)
+          : undefined,
+      ).catch((error) =>
+        console.error("Falha ao notificar nova meta mensal.", error),
+      );
+    }
   }),
 );

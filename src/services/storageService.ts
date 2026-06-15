@@ -8,6 +8,7 @@ const KEYS = {
   monthlyGoals: "@catlovers/monthly-goals",
   activeProfile: "@catlovers/active-profile",
 } as const;
+const NOTIFICATION_DEVICE_KEY = "@catlovers/notification-device";
 
 async function loadJson<T>(key: string): Promise<T | null> {
   const value = await AsyncStorage.getItem(key);
@@ -74,5 +75,16 @@ export const saveActiveProfileId = (profileId: string | null) =>
   profileId
     ? AsyncStorage.setItem(KEYS.activeProfile, profileId)
     : AsyncStorage.removeItem(KEYS.activeProfile);
+
+export async function getNotificationDeviceId() {
+  const stored = await AsyncStorage.getItem(NOTIFICATION_DEVICE_KEY);
+  if (stored) return stored;
+  const created = `catlovers-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 12)}`;
+  await AsyncStorage.setItem(NOTIFICATION_DEVICE_KEY, created);
+  return created;
+}
+
 export const clearLocalCache = () =>
   AsyncStorage.multiRemove(Object.values(KEYS));

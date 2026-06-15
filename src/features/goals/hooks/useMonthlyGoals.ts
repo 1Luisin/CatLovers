@@ -39,13 +39,13 @@ export function useMonthlyGoals(onSyncError: () => void) {
   }, [loaded, monthlyGoals]);
 
   const saveGoal = useCallback(
-    async (goal: MonthlyGoal) => {
+    async (goal: MonthlyGoal, createdByProfileId?: string) => {
       setMonthlyGoals((current) => ({
         ...current,
         [goal.monthKey]: goal,
       }));
       try {
-        const saved = await persistMonthlyGoal(goal);
+        const saved = await persistMonthlyGoal(goal, createdByProfileId);
         setMonthlyGoals((current) => ({
           ...current,
           [saved.monthKey]: saved,

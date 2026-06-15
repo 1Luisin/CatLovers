@@ -12,6 +12,7 @@ import {
   toggleItem,
   updateItem,
 } from "../repositories/itemsRepository.js";
+import { notifyItemCreated } from "../services/notificationService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { requireFields } from "../utils/http.js";
 
@@ -45,7 +46,12 @@ itemsRouter.post(
   "/",
   asyncHandler(async (request, response) => {
     if (!requireFields(request.body, ["title", "category"], response)) return;
-    response.status(201).json(await createItem(request.body));
+    const item = await createItem(request.body);
+    if (!item) throw new Error("O item criado não pôde ser consultado.");
+    response.status(201).json(item);
+    void notifyItemCreated(item).catch((error) =>
+      console.error("Falha ao notificar novo item.", error),
+    );
   }),
 );
 

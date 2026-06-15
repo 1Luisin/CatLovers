@@ -41,6 +41,14 @@
         }
       ],
       [
+        "expo-notifications",
+        {
+          "color": "#C65D6C",
+          "defaultChannel": "catlovers",
+          "mode": "production"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "O CatLovers usa suas fotos apenas para personalizar o perfil.",

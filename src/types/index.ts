@@ -72,3 +72,20 @@ export type UploadFile = {
   name?: string;
   type?: string;
 };
+
+export type NotificationPermissionState =
+  | "loading"
+  | "granted"
+  | "prompt"
+  | "blocked"
+  | "unsupported";
+
+export type NotificationUiState = {
+  permissionState: NotificationPermissionState;
+  enabled: boolean;
+  busy: boolean;
+  message?: string;
+  actionLabel?: string;
+  setEnabled: (enabled: boolean) => Promise<void>;
+  handlePermissionAction: () => Promise<void>;
+};

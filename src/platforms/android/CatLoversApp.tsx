@@ -22,6 +22,7 @@ import { HomeScreen } from "../../features/home/screens/HomeScreen.android";
 import { AddModal } from "../../components/forms/AddModal.android";
 import { CollectionScreen } from "../../features/memories/screens/CollectionScreen.android";
 import { useCoupleItems } from "../../features/memories/hooks/useCoupleItems";
+import { useNativeNotifications } from "../../features/notifications/hooks/useNativeNotifications";
 import { PlansScreen } from "../../features/plans/screens/PlansScreen.android";
 import {
   EditProfileModal,
@@ -101,6 +102,7 @@ export default function App() {
     refreshProfiles,
     saveProfile,
   } = useProfiles(showSyncError);
+  const notificationState = useNativeNotifications(activeProfile, saveProfile);
   const { items, itemsLoaded, refreshItems, togglePlan, saveItem } =
     useCoupleItems(showSyncError);
   const { monthlyGoals, goalsLoaded, refreshMonthlyGoals, saveGoal } =
@@ -169,7 +171,7 @@ export default function App() {
   };
   const handleGoalSave = (goal: MonthlyGoal) => {
     setMonthlyGoalVisible(false);
-    void saveGoal(goal);
+    void saveGoal(goal, activeProfileId ?? undefined);
   };
   const navigateToTab = useCallback(
     (nextTab: Tab) => {
@@ -239,6 +241,14 @@ export default function App() {
           theme={activeTheme}
           onEdit={() => setEditProfileVisible(true)}
           onUpdate={(updated) => void saveProfile(updated, true)}
+          notificationsEnabled={notificationState.enabled}
+          onNotificationChange={notificationState.setEnabled}
+          notificationMessage={notificationState.message}
+          notificationActionLabel={notificationState.actionLabel}
+          notificationBusy={notificationState.busy}
+          onNotificationPermissionAction={
+            notificationState.handlePermissionAction
+          }
           onThemeChange={handleThemeChange}
           refreshing={refreshing}
           onRefresh={handleRefresh}
@@ -266,6 +276,7 @@ export default function App() {
     items,
     monthlyGoals,
     navigateToTab,
+    notificationState,
     profiles,
     refreshing,
     tab,

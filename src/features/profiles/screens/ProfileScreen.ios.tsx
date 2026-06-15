@@ -68,6 +68,7 @@ export function SettingSwitch({
   titleColor,
   descriptionColor,
   onChange,
+  disabled = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -77,6 +78,7 @@ export function SettingSwitch({
   titleColor: string;
   descriptionColor: string;
   onChange: (value: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <View style={styles.settingRow}>
@@ -90,6 +92,7 @@ export function SettingSwitch({
         </Text>
       </View>
       <Pressable
+        disabled={disabled}
         accessibilityRole="switch"
         accessibilityLabel={label}
         accessibilityState={{ checked: value }}
@@ -97,6 +100,7 @@ export function SettingSwitch({
         style={[
           styles.settingToggle,
           { backgroundColor: value ? `${accent}75` : "#DDD4D8" },
+          disabled && { opacity: 0.6 },
         ]}
       >
         <View
@@ -222,6 +226,12 @@ export function ProfileScreen({
   theme,
   onEdit,
   onUpdate,
+  notificationsEnabled,
+  onNotificationChange,
+  notificationMessage,
+  notificationActionLabel,
+  notificationBusy,
+  onNotificationPermissionAction,
   onThemeChange,
   refreshing,
   onRefresh,
@@ -232,6 +242,12 @@ export function ProfileScreen({
   theme: AppTheme;
   onEdit: () => void;
   onUpdate: (profile: Profile) => void;
+  notificationsEnabled: boolean;
+  onNotificationChange: (enabled: boolean) => void;
+  notificationMessage?: string;
+  notificationActionLabel?: string;
+  notificationBusy: boolean;
+  onNotificationPermissionAction: () => void;
   onThemeChange: (theme: ThemeName) => void;
   refreshing: boolean;
   onRefresh: () => void;
@@ -428,13 +444,58 @@ export function ProfileScreen({
         <SettingSwitch
           icon="notifications-outline"
           label="Lembretes do casal"
-          description="Planos próximos e datas especiais"
-          value={profile.notifications}
+          description="Novidades e planos com 24 h de antecedência"
+          value={notificationsEnabled}
           accent={accent}
           titleColor={theme.title}
           descriptionColor={theme.muted}
-          onChange={(notifications) => onUpdate({ ...profile, notifications })}
+          onChange={onNotificationChange}
+          disabled={notificationBusy}
         />
+        {notificationMessage && (
+          <View
+            style={[
+              styles.notificationPermissionNotice,
+              {
+                backgroundColor: theme.accentSoft,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <Ionicons
+              name="information-circle-outline"
+              size={18}
+              color={accent}
+            />
+            <View style={styles.notificationPermissionText}>
+              <Text
+                style={[
+                  styles.notificationPermissionMessage,
+                  { color: theme.muted },
+                ]}
+              >
+                {notificationMessage}
+              </Text>
+              {notificationActionLabel && (
+                <Pressable
+                  disabled={notificationBusy}
+                  onPress={onNotificationPermissionAction}
+                  style={[
+                    styles.notificationPermissionButton,
+                    { backgroundColor: accent },
+                    notificationBusy && styles.notificationPermissionDisabled,
+                  ]}
+                >
+                  <Text style={styles.notificationPermissionButtonText}>
+                    {notificationBusy
+                      ? "Aguarde..."
+                      : notificationActionLabel}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        )}
         <View
           style={[styles.settingDivider, { backgroundColor: theme.border }]}
         />
