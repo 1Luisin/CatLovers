@@ -1,5 +1,5 @@
-import Constants from "expo-constants";
-import * as Notifications from "expo-notifications";
+import Constants, { ExecutionEnvironment } from "expo-constants";
+import type * as ExpoNotifications from "expo-notifications";
 import { Linking, Platform } from "react-native";
 import {
   registerNotificationSubscription,
@@ -10,17 +10,42 @@ import type { NotificationPermissionState } from "../../../types";
 
 const CHANNEL_ID = "catlovers";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+type NotificationsModule = typeof ExpoNotifications;
+
+let notificationsModule: NotificationsModule | undefined;
+let notificationHandlerConfigured = false;
+
+export const isExpoGoNotificationRuntime = () =>
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+function getNotificationsModule() {
+  if (isExpoGoNotificationRuntime()) {
+    throw new Error("EXPO_GO_NOTIFICATIONS_UNSUPPORTED");
+  }
+
+  if (!notificationsModule) {
+    notificationsModule =
+      require("expo-notifications") as NotificationsModule;
+  }
+
+  if (!notificationHandlerConfigured) {
+    notificationsModule.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+    notificationHandlerConfigured = true;
+  }
+
+  return notificationsModule;
+}
 
 async function configureAndroidChannel() {
   if (Platform.OS !== "android") return;
+  const Notifications = getNotificationsModule();
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name: "CatLovers",
     description: "Lembretes de planos, metas e memórias do casal.",
@@ -32,13 +57,15 @@ async function configureAndroidChannel() {
 }
 
 function mapPermission(
-  permission: Notifications.NotificationPermissionsStatus,
+  permission: ExpoNotifications.NotificationPermissionsStatus,
 ): NotificationPermissionState {
   if (permission.granted) return "granted";
   return permission.canAskAgain ? "prompt" : "blocked";
 }
 
 export async function getNativeNotificationPermission() {
+  if (isExpoGoNotificationRuntime()) return "unsupported";
+  const Notifications = getNotificationsModule();
   await configureAndroidChannel();
   return mapPermission(await Notifications.getPermissionsAsync());
 }
@@ -54,6 +81,8 @@ async function getProjectId() {
 }
 
 export async function enableNativeNotifications(profileId: string) {
+  if (isExpoGoNotificationRuntime()) return "unsupported";
+  const Notifications = getNotificationsModule();
   await configureAndroidChannel();
   let permission = await Notifications.getPermissionsAsync();
   if (!permission.granted && permission.canAskAgain) {
@@ -84,6 +113,7 @@ export async function disableNativeNotifications(profileId: string) {
 }
 
 export async function showNativeTestNotification() {
+  const Notifications = getNotificationsModule();
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "CatLovers",
