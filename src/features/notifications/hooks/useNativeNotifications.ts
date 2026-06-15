@@ -9,6 +9,7 @@ import {
   disableNativeNotifications,
   enableNativeNotifications,
   getNativeNotificationPermission,
+  isExpoGoNotificationRuntime,
   openNativeNotificationSettings,
   showNativeTestNotification,
 } from "../services/nativeNotificationService";
@@ -42,6 +43,17 @@ export function useNativeNotifications(
   const setEnabled = useCallback(
     async (enabled: boolean) => {
       if (!profile || busy) return;
+
+      if (enabled && isExpoGoNotificationRuntime()) {
+        setActivationAttempted(true);
+        setPermissionState("unsupported");
+        Alert.alert(
+          "Use um build do CatLovers",
+          "O Expo Go não oferece notificações push no Android desde o Expo SDK 53. Instale um development build ou o APK preview do CatLovers para ativá-las.",
+        );
+        return;
+      }
+
       setBusy(true);
       try {
         if (!enabled) {
@@ -73,10 +85,11 @@ export function useNativeNotifications(
 
         await saveProfile({ ...profile, notifications: true }, true);
         await showNativeTestNotification();
-      } catch {
+      } catch (error) {
+        console.warn("Falha ao ativar notificações nativas:", error);
         Alert.alert(
           "Não foi possível ativar",
-          "Confira a conexão com a API e tente novamente.",
+          "Não foi possível registrar este aparelho. Confira a conexão com a API e as credenciais de notificações do build.",
         );
       } finally {
         setBusy(false);
@@ -86,6 +99,13 @@ export function useNativeNotifications(
   );
 
   const handlePermissionAction = useCallback(async () => {
+    if (permissionState === "unsupported") {
+      Alert.alert(
+        "Notificações no Expo Go",
+        "Para testar notificações no Android, instale um development build com `eas build --platform android --profile development` ou o APK gerado pelo perfil preview.",
+      );
+      return;
+    }
     if (permissionState === "blocked") {
       await openNativeNotificationSettings();
       return;
@@ -114,11 +134,15 @@ export function useNativeNotifications(
       enabled: false,
       busy,
       message:
-        permissionState === "blocked"
+        permissionState === "unsupported"
+          ? "O Expo Go não suporta notificações push neste ambiente. Use um development build ou o APK preview do CatLovers."
+          : permissionState === "blocked"
           ? `As notificações estão bloqueadas no ${systemName}. Abra as configurações do sistema para ativá-las.`
           : `Permita notificações no ${systemName} para receber novidades e lembretes do casal.`,
       actionLabel:
-        permissionState === "blocked"
+        permissionState === "unsupported"
+          ? "Como testar"
+          : permissionState === "blocked"
           ? "Abrir configurações"
           : "Permitir notificações",
       setEnabled,

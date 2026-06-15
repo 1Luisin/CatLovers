@@ -182,6 +182,18 @@ O toggle **Lembretes do casal** solicita a permissão específica de Android,
 iOS ou Web. Depois da autorização, o app envia a notificação de teste
 `Notificação ativa :3` e registra o aparelho na API.
 
+No Android, o Expo Go não oferece notificações push remotas desde o Expo SDK
+53. Para testar o fluxo completo, use um development build:
+
+```bash
+eas build --platform android --profile development
+```
+
+O APK gerado com o perfil `preview` também possui suporte, desde que as
+credenciais FCM estejam configuradas no EAS. Dentro do Expo Go, o aplicativo
+mantém o toggle desligado e apresenta essa orientação sem tentar registrar o
+aparelho.
+
 As notificações incluem:
 
 - criação de uma meta mensal;

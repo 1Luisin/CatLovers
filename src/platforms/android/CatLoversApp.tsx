@@ -9,11 +9,11 @@ import {
   Easing,
   Platform,
   Pressable,
-  SafeAreaView,
   Text,
   useWindowDimensions,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { PLANS_MONTH_KEY, PLANS_MONTH_LABEL } from "../../data/constants";
 import { tabs } from "../../data/uiConstants";
 import { useMonthlyGoals } from "../../features/goals/hooks/useMonthlyGoals";
