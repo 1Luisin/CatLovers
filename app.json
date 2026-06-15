@@ -32,6 +32,15 @@
       "expo-asset",
       "expo-font",
       [
+        "expo-navigation-bar",
+        {
+          "visibility": "hidden",
+          "behavior": "overlay-swipe",
+          "position": "absolute",
+          "legacyVisible": "sticky-immersive"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "O CatLovers usa suas fotos apenas para personalizar o perfil.",

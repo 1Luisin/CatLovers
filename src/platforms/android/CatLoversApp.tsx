@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as NavigationBar from "expo-navigation-bar";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  AppState,
   Easing,
   Platform,
   Pressable,
@@ -42,6 +44,14 @@ import type {
 import { supportsNativeDriver } from "../../utils/platform";
 import styles from "./styles";
 
+async function hideSystemNavigationBar() {
+  try {
+    await NavigationBar.setVisibilityAsync("hidden");
+  } catch {
+    // The native API is unavailable while this screen is rendered in a non-Android preview.
+  }
+}
+
 export default function App() {
   const [tab, setTab] = useState<Tab>("inicio");
   const screenOpacity = useRef(new Animated.Value(1)).current;
@@ -55,6 +65,15 @@ export default function App() {
   const [monthlyGoalVisible, setMonthlyGoalVisible] = useState(false);
   const [editProfileVisible, setEditProfileVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    void hideSystemNavigationBar();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") void hideSystemNavigationBar();
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   const showSyncError = useCallback(
     () =>
