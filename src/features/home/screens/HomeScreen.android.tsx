@@ -11,6 +11,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   Switch,
@@ -62,12 +63,16 @@ export function HomeScreen({
   profile,
   profiles,
   onViewAll,
+  refreshing,
+  onRefresh,
   theme,
 }: {
   items: CoupleItem[];
   profile: Profile;
   profiles: Profile[];
   onViewAll: () => void;
+  refreshing: boolean;
+  onRefresh: () => void;
   theme: AppTheme;
 }) {
   const completed = items.filter((item) => item.done).length;
@@ -78,6 +83,15 @@ export function HomeScreen({
     <ScrollView
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={theme.accent}
+          colors={[theme.accent]}
+          progressBackgroundColor={theme.surface}
+        />
+      }
     >
       <AppHeader
         eyebrow="SEGUNDA, 8 DE JUNHO"

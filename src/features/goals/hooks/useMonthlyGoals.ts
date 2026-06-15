@@ -13,6 +13,15 @@ export function useMonthlyGoals(onSyncError: () => void) {
     useState<Record<string, MonthlyGoal>>(initialMonthlyGoals);
   const [loaded, setLoaded] = useState(false);
 
+  const refreshMonthlyGoals = useCallback(async () => {
+    const goals = await getMonthlyGoals();
+    const nextGoals = Object.fromEntries(
+      goals.map((goal) => [goal.monthKey, goal]),
+    );
+    setMonthlyGoals(nextGoals);
+    await saveCachedMonthlyGoals(nextGoals);
+  }, []);
+
   useEffect(() => {
     loadCachedMonthlyGoals()
       .then((cachedGoals) => {
@@ -21,15 +30,9 @@ export function useMonthlyGoals(onSyncError: () => void) {
       .catch(() => undefined)
       .finally(() => {
         setLoaded(true);
-        getMonthlyGoals()
-          .then((goals) =>
-            setMonthlyGoals(
-              Object.fromEntries(goals.map((goal) => [goal.monthKey, goal])),
-            ),
-          )
-          .catch(() => undefined);
+        void refreshMonthlyGoals().catch(() => undefined);
       });
-  }, []);
+  }, [refreshMonthlyGoals]);
 
   useEffect(() => {
     if (loaded) void saveCachedMonthlyGoals(monthlyGoals);
@@ -57,6 +60,7 @@ export function useMonthlyGoals(onSyncError: () => void) {
   return {
     monthlyGoals,
     goalsLoaded: loaded,
+    refreshMonthlyGoals,
     saveGoal,
   };
 }

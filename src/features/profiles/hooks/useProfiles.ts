@@ -16,6 +16,13 @@ export function useProfiles(onSyncError: () => void) {
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
+  const refreshProfiles = useCallback(async () => {
+    const remoteProfiles = await getProfiles();
+    if (!remoteProfiles.length) return;
+    setProfiles(remoteProfiles);
+    await saveCachedProfiles(remoteProfiles);
+  }, []);
+
   useEffect(() => {
     Promise.all([loadCachedProfiles(), loadActiveProfileId()])
       .then(([cachedProfiles, cachedActiveProfile]) => {
@@ -33,15 +40,9 @@ export function useProfiles(onSyncError: () => void) {
       .catch(() => undefined)
       .finally(() => {
         setLoaded(true);
-        getProfiles()
-          .then((remoteProfiles) => {
-            if (!remoteProfiles.length) return;
-            setProfiles(remoteProfiles);
-            void saveCachedProfiles(remoteProfiles);
-          })
-          .catch(() => undefined);
+        void refreshProfiles().catch(() => undefined);
       });
-  }, []);
+  }, [refreshProfiles]);
 
   useEffect(() => {
     if (loaded) void saveCachedProfiles(profiles);
@@ -86,6 +87,7 @@ export function useProfiles(onSyncError: () => void) {
     profilesLoaded: loaded,
     selectProfile: setActiveProfileId,
     clearActiveProfile,
+    refreshProfiles,
     saveProfile,
   };
 }

@@ -11,6 +11,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   Switch,
@@ -222,6 +223,8 @@ export function ProfileScreen({
   onEdit,
   onUpdate,
   onThemeChange,
+  refreshing,
+  onRefresh,
   onSwitchProfile,
 }: {
   profile: Profile;
@@ -230,6 +233,8 @@ export function ProfileScreen({
   onEdit: () => void;
   onUpdate: (profile: Profile) => void;
   onThemeChange: (theme: ThemeName) => void;
+  refreshing: boolean;
+  onRefresh: () => void;
   onSwitchProfile: () => void;
 }) {
   const completed = items.filter((item) => item.done).length;
@@ -237,7 +242,18 @@ export function ProfileScreen({
   const accent = theme.accent;
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={theme.accent}
+          colors={[theme.accent]}
+          progressBackgroundColor={theme.surface}
+        />
+      }
+    >
       <View style={styles.header}>
         <View>
           <Text style={[styles.eyebrow, { color: accent }]}>MINHA CONTA</Text>

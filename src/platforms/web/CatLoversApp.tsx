@@ -56,12 +56,21 @@ export default function App() {
   const [editingMemory, setEditingMemory] = useState<CoupleItem>();
   const [monthlyGoalVisible, setMonthlyGoalVisible] = useState(false);
   const [editProfileVisible, setEditProfileVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const showSyncError = useCallback(
     () =>
       Alert.alert(
         "Sem conexão com a API",
         "A alteração local foi mantida e pode ser refeita quando o servidor estiver disponível.",
+      ),
+    [],
+  );
+  const showRefreshError = useCallback(
+    () =>
+      Alert.alert(
+        "Não foi possível atualizar",
+        "Confira sua conexão e tente novamente.",
       ),
     [],
   );
@@ -72,11 +81,12 @@ export default function App() {
     profilesLoaded,
     selectProfile,
     clearActiveProfile,
+    refreshProfiles,
     saveProfile,
   } = useProfiles(showSyncError);
-  const { items, itemsLoaded, togglePlan, saveItem } =
+  const { items, itemsLoaded, refreshItems, togglePlan, saveItem } =
     useCoupleItems(showSyncError);
-  const { monthlyGoals, goalsLoaded, saveGoal } =
+  const { monthlyGoals, goalsLoaded, refreshMonthlyGoals, saveGoal } =
     useMonthlyGoals(showSyncError);
   const loaded = profilesLoaded && itemsLoaded && goalsLoaded;
   const activeTheme = themes[activeProfile?.theme ?? "Light"];
@@ -90,6 +100,27 @@ export default function App() {
     setAddMode("memory");
     setModalVisible(true);
   };
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refreshProfiles(),
+        refreshItems(),
+        refreshMonthlyGoals(),
+      ]);
+    } catch {
+      showRefreshError();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [
+    refreshItems,
+    refreshMonthlyGoals,
+    refreshProfiles,
+    refreshing,
+    showRefreshError,
+  ]);
 
   const handleThemeChange = (themeName: ThemeName) => {
     if (!activeProfile || activeProfile.theme === themeName) return;
@@ -306,6 +337,37 @@ export default function App() {
                 </Text>
               </View>
             </View>
+
+            <Pressable
+              testID="desktop-refresh-button"
+              accessibilityRole="button"
+              accessibilityLabel="Atualizar dados do aplicativo"
+              disabled={refreshing}
+              onPress={() => void handleRefresh()}
+              style={({ pressed }) => [
+                styles.desktopRefreshButton,
+                {
+                  backgroundColor: activeTheme.surface,
+                  borderColor: activeTheme.border,
+                },
+                refreshing && styles.desktopRefreshButtonDisabled,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons
+                name="refresh-outline"
+                size={18}
+                color={activeTheme.accent}
+              />
+              <Text
+                style={[
+                  styles.desktopRefreshButtonText,
+                  { color: activeTheme.title },
+                ]}
+              >
+                {refreshing ? "Atualizando..." : "Atualizar dados"}
+              </Text>
+            </Pressable>
 
             <View style={styles.desktopNavigation}>
               {tabs.map((item) => {

@@ -54,12 +54,21 @@ export default function App() {
   const [editingMemory, setEditingMemory] = useState<CoupleItem>();
   const [monthlyGoalVisible, setMonthlyGoalVisible] = useState(false);
   const [editProfileVisible, setEditProfileVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const showSyncError = useCallback(
     () =>
       Alert.alert(
         "Sem conexão com a API",
         "A alteração local foi mantida e pode ser refeita quando o servidor estiver disponível.",
+      ),
+    [],
+  );
+  const showRefreshError = useCallback(
+    () =>
+      Alert.alert(
+        "Não foi possível atualizar",
+        "Confira sua conexão e tente novamente.",
       ),
     [],
   );
@@ -70,11 +79,12 @@ export default function App() {
     profilesLoaded,
     selectProfile,
     clearActiveProfile,
+    refreshProfiles,
     saveProfile,
   } = useProfiles(showSyncError);
-  const { items, itemsLoaded, togglePlan, saveItem } =
+  const { items, itemsLoaded, refreshItems, togglePlan, saveItem } =
     useCoupleItems(showSyncError);
-  const { monthlyGoals, goalsLoaded, saveGoal } =
+  const { monthlyGoals, goalsLoaded, refreshMonthlyGoals, saveGoal } =
     useMonthlyGoals(showSyncError);
   const loaded = profilesLoaded && itemsLoaded && goalsLoaded;
   const activeTheme = themes[activeProfile?.theme ?? "Light"];
@@ -88,6 +98,27 @@ export default function App() {
     setAddMode("memory");
     setModalVisible(true);
   };
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refreshProfiles(),
+        refreshItems(),
+        refreshMonthlyGoals(),
+      ]);
+    } catch {
+      showRefreshError();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [
+    refreshItems,
+    refreshMonthlyGoals,
+    refreshProfiles,
+    refreshing,
+    showRefreshError,
+  ]);
 
   const handleThemeChange = (themeName: ThemeName) => {
     if (!activeProfile || activeProfile.theme === themeName) return;
@@ -164,6 +195,8 @@ export default function App() {
           theme={activeTheme}
           onAdd={() => openAddModal("memory")}
           onEdit={openMemoryEditor}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
         />
       );
     if (tab === "planos")
@@ -175,6 +208,8 @@ export default function App() {
           onConfigureGoal={() => setMonthlyGoalVisible(true)}
           onAddIdea={() => openAddModal("plan")}
           onToggle={togglePlan}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
         />
       );
     if (tab === "perfil")
@@ -186,6 +221,8 @@ export default function App() {
           onEdit={() => setEditProfileVisible(true)}
           onUpdate={(updated) => void saveProfile(updated, true)}
           onThemeChange={handleThemeChange}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           onSwitchProfile={() => {
             setTab("inicio");
             clearActiveProfile();
@@ -199,9 +236,21 @@ export default function App() {
         profiles={profiles}
         theme={activeTheme}
         onViewAll={() => navigateToTab("colecao")}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
       />
     );
-  }, [activeProfile, activeTheme, items, monthlyGoals, navigateToTab, profiles, tab]);
+  }, [
+    activeProfile,
+    activeTheme,
+    handleRefresh,
+    items,
+    monthlyGoals,
+    navigateToTab,
+    profiles,
+    refreshing,
+    tab,
+  ]);
 
   if (!loaded) {
     return (

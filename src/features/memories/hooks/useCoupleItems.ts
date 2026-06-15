@@ -14,6 +14,12 @@ export function useCoupleItems(onSyncError: () => void) {
   const [items, setItems] = useState<CoupleItem[]>(initialItems);
   const [loaded, setLoaded] = useState(false);
 
+  const refreshItems = useCallback(async () => {
+    const remoteItems = await getItems();
+    setItems(remoteItems);
+    await saveCachedItems(remoteItems);
+  }, []);
+
   useEffect(() => {
     loadCachedItems()
       .then((cachedItems) => {
@@ -22,11 +28,9 @@ export function useCoupleItems(onSyncError: () => void) {
       .catch(() => undefined)
       .finally(() => {
         setLoaded(true);
-        getItems()
-          .then(setItems)
-          .catch(() => undefined);
+        void refreshItems().catch(() => undefined);
       });
-  }, []);
+  }, [refreshItems]);
 
   useEffect(() => {
     if (loaded) void saveCachedItems(items);
@@ -95,6 +99,7 @@ export function useCoupleItems(onSyncError: () => void) {
   return {
     items,
     itemsLoaded: loaded,
+    refreshItems,
     togglePlan,
     saveItem,
   };

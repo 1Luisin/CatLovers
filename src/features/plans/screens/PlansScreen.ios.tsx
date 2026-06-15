@@ -11,6 +11,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   Switch,
@@ -63,6 +64,8 @@ export function PlansScreen({
   onConfigureGoal,
   onAddIdea,
   onToggle,
+  refreshing,
+  onRefresh,
   theme,
 }: {
   items: CoupleItem[];
@@ -70,6 +73,8 @@ export function PlansScreen({
   onConfigureGoal: () => void;
   onAddIdea: () => void;
   onToggle: (id: string) => void;
+  refreshing: boolean;
+  onRefresh: () => void;
   theme: AppTheme;
 }) {
   const today = new Date();
@@ -126,7 +131,18 @@ export function PlansScreen({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={theme.accent}
+          colors={[theme.accent]}
+          progressBackgroundColor={theme.surface}
+        />
+      }
+    >
       <AppHeader
         eyebrow="TEMPO DE QUALIDADE"
         title="Planos de junho"
