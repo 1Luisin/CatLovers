@@ -152,7 +152,10 @@ export function PlansScreen({
               styles.progressFill,
               {
                 width: `${progress * 100}%`,
-                backgroundColor: theme.accent,
+                backgroundColor:
+                  theme.character === "Cinnamoroll"
+                    ? palette.paper
+                    : theme.accent,
               },
             ]}
           />

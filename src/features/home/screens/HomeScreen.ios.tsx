@@ -149,7 +149,7 @@ export function HomeScreen({
         >
           <Ionicons name="sparkles-outline" size={20} color={theme.accent} />
           <Text style={[styles.statValue, { color: theme.title }]}>
-            {items.length}
+            {memories.length}
           </Text>
           <Text style={[styles.statLabel, { color: theme.muted }]}>
             momentos salvos
