@@ -199,12 +199,29 @@ Para Android, é obrigatório:
 1. criar ou abrir um projeto no Firebase;
 2. adicionar um app Android com o pacote `com.catlovers.app`;
 3. baixar o arquivo `google-services.json`;
-4. colocar esse arquivo na raiz do projeto como `google-services.json`;
-5. manter `expo.android.googleServicesFile` apontando para
-   `./google-services.json`;
-6. gerar uma Google Service Account Key para FCM V1 no Firebase;
-7. cadastrar essa chave no EAS com `eas credentials` ou pelo painel da Expo;
-8. gerar um novo APK depois disso.
+4. fornecer esse arquivo ao EAS de uma das duas formas abaixo;
+5. gerar uma Google Service Account Key para FCM V1 no Firebase;
+6. cadastrar essa chave no EAS com `eas credentials` ou pelo painel da Expo;
+7. gerar um novo APK depois disso.
+
+Opção simples: colocar o `google-services.json` na raiz do projeto e commitar o
+arquivo. O EAS só envia arquivos rastreados pelo Git para o build remoto:
+
+```bash
+git add google-services.json
+git commit -m "Adiciona configuração Firebase Android"
+git push
+```
+
+Opção sem commitar o arquivo: criar uma variável de ambiente de arquivo no EAS
+chamada `GOOGLE_SERVICES_JSON`, usando o arquivo `google-services.json`. O
+`app.config.js` usa `process.env.GOOGLE_SERVICES_JSON` quando a variável existe
+e volta para `./google-services.json` em desenvolvimento local. Crie a variável
+nos ambientes que você usa para build, por exemplo `development` e `preview`.
+
+```bash
+eas env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility secret --environment development --environment preview
+```
 
 O arquivo `google-services.json` identifica o app Android no Firebase e precisa
 entrar no APK. A service account FCM V1 contém chave privada, não deve ser
