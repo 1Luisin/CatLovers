@@ -14,6 +14,21 @@ import {
   showNativeTestNotification,
 } from "../services/nativeNotificationService";
 
+function getNativeActivationErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  const missingAndroidFirebase =
+    Platform.OS === "android" &&
+    (message.includes("Default FirebaseApp is not initialized") ||
+      message.includes("fcm-credentials") ||
+      message.includes("FirebaseApp.initializeApp"));
+
+  if (missingAndroidFirebase) {
+    return "Este APK foi gerado sem o Firebase/FCM do Android. Coloque o google-services.json do pacote com.catlovers.app na raiz do projeto, cadastre a service account FCM V1 no EAS e gere um novo APK.";
+  }
+
+  return "Não foi possível registrar este aparelho. Confira a conexão com a API e as credenciais de notificações do build.";
+}
+
 export function useNativeNotifications(
   profile: Profile | undefined,
   saveProfile: (profile: Profile, settingsOnly?: boolean) => Promise<void>,
@@ -89,7 +104,7 @@ export function useNativeNotifications(
         console.warn("Falha ao ativar notificações nativas:", error);
         Alert.alert(
           "Não foi possível ativar",
-          "Não foi possível registrar este aparelho. Confira a conexão com a API e as credenciais de notificações do build.",
+          getNativeActivationErrorMessage(error),
         );
       } finally {
         setBusy(false);

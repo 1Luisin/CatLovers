@@ -7,6 +7,9 @@ web-build/
 .DS_Store
 .env
 .env.local
+firebase-service-account*.json
+fcm-service-account*.json
+service-account*.json
 backend/.env
 backend/dist/
 backend/uploads/*

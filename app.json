@@ -21,6 +21,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F8EFE8"
       },
+      "googleServicesFile": "./google-services.json",
       "package": "com.catlovers.app",
       "versionCode": 1
     },

@@ -189,10 +189,26 @@ No Android, o Expo Go não oferece notificações push remotas desde o Expo SDK
 eas build --platform android --profile development
 ```
 
-O APK gerado com o perfil `preview` também possui suporte, desde que as
-credenciais FCM estejam configuradas no EAS. Dentro do Expo Go, o aplicativo
-mantém o toggle desligado e apresenta essa orientação sem tentar registrar o
-aparelho.
+O APK gerado com o perfil `preview` também possui suporte, desde que o Firebase
+Cloud Messaging esteja configurado antes do build. Dentro do Expo Go, o
+aplicativo mantém o toggle desligado e apresenta essa orientação sem tentar
+registrar o aparelho.
+
+Para Android, é obrigatório:
+
+1. criar ou abrir um projeto no Firebase;
+2. adicionar um app Android com o pacote `com.catlovers.app`;
+3. baixar o arquivo `google-services.json`;
+4. colocar esse arquivo na raiz do projeto como `google-services.json`;
+5. manter `expo.android.googleServicesFile` apontando para
+   `./google-services.json`;
+6. gerar uma Google Service Account Key para FCM V1 no Firebase;
+7. cadastrar essa chave no EAS com `eas credentials` ou pelo painel da Expo;
+8. gerar um novo APK depois disso.
+
+O arquivo `google-services.json` identifica o app Android no Firebase e precisa
+entrar no APK. A service account FCM V1 contém chave privada, não deve ser
+commitada e deve ser enviada apenas para as credenciais do EAS.
 
 As notificações incluem:
 
