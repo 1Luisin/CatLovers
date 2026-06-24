@@ -210,6 +210,14 @@ export function RouletteScreenBase({
     () => options.slice(0, MAX_VISIBLE_WHEEL_OPTIONS),
     [options],
   );
+  const selectedIndex = useMemo(
+    () => options.findIndex((option) => option === selected),
+    [options, selected],
+  );
+  const selectedColor =
+    selectedIndex >= 0
+      ? segmentColors[selectedIndex % segmentColors.length]
+      : theme.accent;
 
   const wheelRotation = rotation.interpolate({
     inputRange: [0, 360],
@@ -253,6 +261,40 @@ export function RouletteScreenBase({
       </LinearGradient>
 
       <View style={styles.rouletteStage}>
+        {selected ? (
+          <View
+            style={[
+              styles.rouletteWinnerRibbon,
+              {
+                backgroundColor: theme.surface,
+                borderColor: selectedColor,
+                shadowColor: selectedColor,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.rouletteWinnerIcon,
+                { backgroundColor: selectedColor },
+              ]}
+            >
+              <Ionicons name="sparkles" size={20} color={palette.paper} />
+            </View>
+            <View style={styles.rouletteWinnerTextBlock}>
+              <Text
+                style={[styles.rouletteWinnerLabel, { color: theme.accent }]}
+              >
+                PROGRAMA SORTEADO
+              </Text>
+              <Text
+                numberOfLines={2}
+                style={[styles.rouletteWinnerTitle, { color: theme.title }]}
+              >
+                {selected}
+              </Text>
+            </View>
+          </View>
+        ) : null}
         <View
           style={[
             styles.roulettePointer,
@@ -276,6 +318,7 @@ export function RouletteScreenBase({
             ]}
           />
           {visibleOptions.map((option, index) => {
+            const selectedOption = option === selected;
             const angle =
               (360 / Math.max(visibleOptions.length, 1)) * index - 90;
             const radians = (angle * Math.PI) / 180;
@@ -293,8 +336,11 @@ export function RouletteScreenBase({
                     left,
                     top,
                     backgroundColor:
-                      segmentColors[index % segmentColors.length],
+                      selectedOption
+                        ? selectedColor
+                        : segmentColors[index % segmentColors.length],
                   },
+                  selectedOption && styles.rouletteWheelOptionSelected,
                 ]}
               >
                 <Text
@@ -319,12 +365,12 @@ export function RouletteScreenBase({
           ]}
         >
           <Ionicons
-            name={spinning ? "sync-outline" : "play"}
+            name={spinning ? "sync-outline" : selected ? "refresh" : "play"}
             size={18}
             color={palette.paper}
           />
           <Text style={styles.rouletteSpinText}>
-            {spinning ? "Girando" : "Girar"}
+            {spinning ? "Girando" : selected ? "Girar de novo" : "Girar"}
           </Text>
         </Pressable>
       </View>
@@ -333,6 +379,11 @@ export function RouletteScreenBase({
         style={[
           styles.rouletteResultCard,
           { backgroundColor: theme.surface, borderColor: theme.border },
+          selected && {
+            borderColor: selectedColor,
+            borderWidth: 2,
+            shadowColor: selectedColor,
+          },
         ]}
       >
         <Text style={[styles.rouletteResultLabel, { color: theme.accent }]}>
