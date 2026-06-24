@@ -14,6 +14,16 @@ export const expoBuildsUrl =
 
 export const mobileDownloads: MobileDownload[] = [
   {
+    id: "android-stable-0866b353",
+    platform: "Android",
+    version: "1.1.0",
+    buildType: "Estável testada",
+    date: "24 JUN 2026",
+    status: "Disponível",
+    url: "https://expo.dev/accounts/1luisin/projects/catlovers/builds/0866b353-0eb1-48f8-9150-af9bda681a54",
+    notes: "Build estável testada e aprovada para instalação no celular.",
+  },
+  {
     id: "android-stable-93d6366d",
     platform: "Android",
     version: "1.1.0",
