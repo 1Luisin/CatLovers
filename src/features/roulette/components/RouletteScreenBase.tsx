@@ -16,6 +16,11 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Svg, {
+  Circle,
+  Path,
+  Text as SvgText,
+} from "react-native-svg";
 import {
   loadRouletteOptions,
   saveRouletteOptions,
@@ -27,10 +32,8 @@ import { supportsNativeDriver } from "../../../utils/platform";
 const MAX_OPTIONS = 100;
 const WHEEL_SIZE = 260;
 const WHEEL_CENTER = WHEEL_SIZE / 2;
-const CHIP_WIDTH = 84;
-const CHIP_HEIGHT = 30;
-const CHIP_RADIUS = 91;
-const MAX_VISIBLE_WHEEL_OPTIONS = 10;
+const WHEEL_RADIUS = 124;
+const LABEL_RADIUS = 82;
 
 const defaultRouletteOptions = [
   "Cinema",
@@ -79,6 +82,36 @@ function normalizeOptions(options: string[]) {
       return true;
     })
     .slice(0, MAX_OPTIONS);
+}
+
+function pointOnWheel(angle: number, radius = WHEEL_RADIUS) {
+  const radians = ((angle - 90) * Math.PI) / 180;
+  return {
+    x: WHEEL_CENTER + radius * Math.cos(radians),
+    y: WHEEL_CENTER + radius * Math.sin(radians),
+  };
+}
+
+function segmentPath(index: number, total: number) {
+  const segmentSize = 360 / total;
+  const startAngle = index * segmentSize;
+  const endAngle = startAngle + segmentSize;
+  const start = pointOnWheel(startAngle);
+  const end = pointOnWheel(endAngle);
+  const largeArcFlag = segmentSize > 180 ? 1 : 0;
+
+  return [
+    `M ${WHEEL_CENTER} ${WHEEL_CENTER}`,
+    `L ${start.x} ${start.y}`,
+    `A ${WHEEL_RADIUS} ${WHEEL_RADIUS} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`,
+    "Z",
+  ].join(" ");
+}
+
+function wheelLabel(option: string, total: number, index: number) {
+  if (total > 18) return String(index + 1);
+  const limit = total <= 6 ? 15 : total <= 10 ? 11 : 8;
+  return option.length > limit ? `${option.slice(0, limit - 1)}…` : option;
 }
 
 export function RouletteScreenBase({
@@ -206,10 +239,6 @@ export function RouletteScreenBase({
     });
   }, [options, rotation, spinning]);
 
-  const visibleOptions = useMemo(
-    () => options.slice(0, MAX_VISIBLE_WHEEL_OPTIONS),
-    [options],
-  );
   const selectedIndex = useMemo(
     () => options.findIndex((option) => option === selected),
     [options, selected],
@@ -261,6 +290,119 @@ export function RouletteScreenBase({
       </LinearGradient>
 
       <View style={styles.rouletteStage}>
+        <View
+          style={[
+            styles.roulettePointer,
+            { borderTopColor: theme.accent },
+          ]}
+        />
+        <View
+          style={[
+            styles.roulettePointerNeedle,
+            { backgroundColor: theme.accent },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.rouletteWheel,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.border,
+              transform: [{ rotate: wheelRotation }],
+            },
+          ]}
+        >
+          <Svg
+            width={WHEEL_SIZE}
+            height={WHEEL_SIZE}
+            viewBox={`0 0 ${WHEEL_SIZE} ${WHEEL_SIZE}`}
+            style={styles.rouletteWheelSvg}
+          >
+            <Circle
+              cx={WHEEL_CENTER}
+              cy={WHEEL_CENTER}
+              r={WHEEL_RADIUS}
+              fill={theme.accentSoft}
+            />
+            {options.length ? (
+              options.map((option, index) => {
+                const selectedOption = option === selected;
+                const segmentSize = 360 / options.length;
+                const labelAngle = index * segmentSize + segmentSize / 2;
+                const labelPoint = pointOnWheel(labelAngle, LABEL_RADIUS);
+
+                return (
+                  <React.Fragment key={`${option}-${index}`}>
+                    <Path
+                      d={segmentPath(index, options.length)}
+                      fill={
+                        selectedOption
+                          ? selectedColor
+                          : segmentColors[index % segmentColors.length]
+                      }
+                      stroke={selectedOption ? palette.paper : theme.surface}
+                      strokeWidth={selectedOption ? 5 : 3}
+                    />
+                    <SvgText
+                      x={labelPoint.x}
+                      y={labelPoint.y}
+                      fill={palette.paper}
+                      fontSize={options.length <= 8 ? 10 : 8}
+                      fontWeight="900"
+                      textAnchor="middle"
+                      alignmentBaseline="middle"
+                    >
+                      {wheelLabel(option, options.length, index)}
+                    </SvgText>
+                  </React.Fragment>
+                );
+              })
+            ) : (
+              <Path
+                d={segmentPath(0, 1)}
+                fill={theme.accentSoft}
+                stroke={theme.surface}
+                strokeWidth={3}
+              />
+            )}
+            <Circle
+              cx={WHEEL_CENTER}
+              cy={WHEEL_CENTER}
+              r={WHEEL_RADIUS}
+              fill="none"
+              stroke={theme.border}
+              strokeWidth={3}
+            />
+            <Circle
+              cx={WHEEL_CENTER}
+              cy={WHEEL_CENTER}
+              r={48}
+              fill={theme.surface}
+              stroke={theme.border}
+              strokeWidth={3}
+            />
+          </Svg>
+        </Animated.View>
+
+        <Pressable
+          disabled={spinning || !options.length}
+          onPress={spinWheel}
+          style={({ pressed }) => [
+            styles.rouletteSpinButton,
+            { backgroundColor: theme.accent },
+            (!options.length || spinning) && styles.rouletteDisabled,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Ionicons
+            name={spinning ? "sync-outline" : selected ? "refresh" : "play"}
+            size={18}
+            color={palette.paper}
+          />
+          <Text style={styles.rouletteSpinText}>
+            {spinning ? "Girando" : selected ? "Girar de novo" : "Girar"}
+          </Text>
+        </Pressable>
         {selected ? (
           <View
             style={[
@@ -295,84 +437,6 @@ export function RouletteScreenBase({
             </View>
           </View>
         ) : null}
-        <View
-          style={[
-            styles.roulettePointer,
-            { borderTopColor: theme.accent },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.rouletteWheel,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.border,
-              transform: [{ rotate: wheelRotation }],
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.rouletteWheelGlow,
-              { backgroundColor: theme.accentSoft },
-            ]}
-          />
-          {visibleOptions.map((option, index) => {
-            const selectedOption = option === selected;
-            const angle =
-              (360 / Math.max(visibleOptions.length, 1)) * index - 90;
-            const radians = (angle * Math.PI) / 180;
-            const left =
-              WHEEL_CENTER + Math.cos(radians) * CHIP_RADIUS - CHIP_WIDTH / 2;
-            const top =
-              WHEEL_CENTER + Math.sin(radians) * CHIP_RADIUS - CHIP_HEIGHT / 2;
-
-            return (
-              <View
-                key={`${option}-${index}`}
-                style={[
-                  styles.rouletteWheelOption,
-                  {
-                    left,
-                    top,
-                    backgroundColor:
-                      selectedOption
-                        ? selectedColor
-                        : segmentColors[index % segmentColors.length],
-                  },
-                  selectedOption && styles.rouletteWheelOptionSelected,
-                ]}
-              >
-                <Text
-                  numberOfLines={1}
-                  style={styles.rouletteWheelOptionText}
-                >
-                  {option}
-                </Text>
-              </View>
-            );
-          })}
-        </Animated.View>
-
-        <Pressable
-          disabled={spinning || !options.length}
-          onPress={spinWheel}
-          style={({ pressed }) => [
-            styles.rouletteSpinButton,
-            { backgroundColor: theme.accent },
-            (!options.length || spinning) && styles.rouletteDisabled,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Ionicons
-            name={spinning ? "sync-outline" : selected ? "refresh" : "play"}
-            size={18}
-            color={palette.paper}
-          />
-          <Text style={styles.rouletteSpinText}>
-            {spinning ? "Girando" : selected ? "Girar de novo" : "Girar"}
-          </Text>
-        </Pressable>
       </View>
 
       <View
