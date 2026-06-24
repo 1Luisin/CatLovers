@@ -22,6 +22,7 @@ import { CollectionScreen } from "../../features/memories/screens/CollectionScre
 import { useCoupleItems } from "../../features/memories/hooks/useCoupleItems";
 import { useNativeNotifications } from "../../features/notifications/hooks/useNativeNotifications";
 import { PlansScreen } from "../../features/plans/screens/PlansScreen.ios";
+import { RouletteScreen } from "../../features/roulette/screens/RouletteScreen.ios";
 import {
   EditProfileModal,
   ProfileScreen,
@@ -214,6 +215,7 @@ export default function App() {
           onRefresh={handleRefresh}
         />
       );
+    if (tab === "roleta") return <RouletteScreen theme={activeTheme} />;
     if (tab === "perfil")
       return (
         <ProfileScreen

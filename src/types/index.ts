@@ -58,7 +58,13 @@ export type MonthlyGoal = {
   description: string;
 };
 
-export type TabName = "inicio" | "colecao" | "planos" | "downloads" | "perfil";
+export type TabName =
+  | "inicio"
+  | "colecao"
+  | "planos"
+  | "roleta"
+  | "downloads"
+  | "perfil";
 export type CategoryFilter = "Todos" | MemoryCategory;
 export type RatingFilter = "Todas" | "Sem avaliacao" | 1 | 2 | 3 | 4 | 5;
 export type CollectionFilters = {

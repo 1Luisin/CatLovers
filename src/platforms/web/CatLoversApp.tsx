@@ -23,6 +23,7 @@ import { MobileDownloadsScreen } from "../../features/downloads/screens/MobileDo
 import { useCoupleItems } from "../../features/memories/hooks/useCoupleItems";
 import { useWebNotifications } from "../../features/notifications/hooks/useWebNotifications";
 import { PlansScreen } from "../../features/plans/screens/PlansScreen.web";
+import { RouletteScreen } from "../../features/roulette/screens/RouletteScreen.web";
 import {
   EditProfileModal,
   ProfileScreen,
@@ -213,6 +214,7 @@ export default function App() {
           onToggle={togglePlan}
         />
       );
+    if (tab === "roleta") return <RouletteScreen theme={activeTheme} />;
     if (tab === "downloads")
       return <MobileDownloadsScreen theme={activeTheme} />;
     if (tab === "perfil")

@@ -116,6 +116,12 @@ export const tabs: Array<{
     activeIcon: "calendar",
   },
   {
+    key: "roleta",
+    label: "Roleta",
+    icon: "aperture-outline",
+    activeIcon: "aperture",
+  },
+  {
     key: "perfil",
     label: "Perfil",
     icon: "person-outline",
@@ -129,12 +135,12 @@ export const webTabs: Array<{
   icon: IconName;
   activeIcon: IconName;
 }> = [
-  ...tabs.slice(0, 3),
+  ...tabs.slice(0, 4),
   {
     key: "downloads",
     label: "Baixar",
     icon: "cloud-download-outline",
     activeIcon: "cloud-download",
   },
-  tabs[3],
+  tabs[4],
 ];

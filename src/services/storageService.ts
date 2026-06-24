@@ -6,6 +6,7 @@ const KEYS = {
   items: "@catlovers/items",
   profiles: "@catlovers/profiles",
   monthlyGoals: "@catlovers/monthly-goals",
+  rouletteOptions: "@catlovers/roulette-options",
   activeProfile: "@catlovers/active-profile",
 } as const;
 const NOTIFICATION_DEVICE_KEY = "@catlovers/notification-device";
@@ -69,6 +70,10 @@ export const loadCachedMonthlyGoals = () =>
 export const saveCachedMonthlyGoals = (
   goals: Record<string, MonthlyGoal>,
 ) => saveJson(KEYS.monthlyGoals, goals);
+export const loadRouletteOptions = () =>
+  loadJson<string[]>(KEYS.rouletteOptions);
+export const saveRouletteOptions = (options: string[]) =>
+  saveJson(KEYS.rouletteOptions, options);
 export const loadActiveProfileId = () =>
   AsyncStorage.getItem(KEYS.activeProfile);
 export const saveActiveProfileId = (profileId: string | null) =>
