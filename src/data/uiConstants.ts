@@ -122,3 +122,19 @@ export const tabs: Array<{
     activeIcon: "person",
   },
 ];
+
+export const webTabs: Array<{
+  key: TabName;
+  label: string;
+  icon: IconName;
+  activeIcon: IconName;
+}> = [
+  ...tabs.slice(0, 3),
+  {
+    key: "downloads",
+    label: "Baixar",
+    icon: "cloud-download-outline",
+    activeIcon: "cloud-download",
+  },
+  tabs[3],
+];

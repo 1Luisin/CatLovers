@@ -245,6 +245,21 @@ Service Worker e chaves VAPID geradas automaticamente e armazenadas no banco.
 As tabelas necessárias são criadas de forma idempotente na inicialização da
 API; o SQL equivalente está em `backend/sql/notifications.sql`.
 
+## Downloads mobile na Web
+
+A versão Web possui a aba **Baixar** para centralizar downloads Android/iOS. A
+página oficial de builds da Expo exige login, então o navegador não busca essa
+lista diretamente. Para atualizar a lista exibida na Web, rode o comando abaixo
+em um ambiente autenticado no EAS:
+
+```bash
+npm run downloads:sync
+```
+
+O comando usa `eas build:list --json` e atualiza
+`src/data/mobileDownloads.ts` com os builds finalizados que possuem artefato de
+download. Depois disso, commit e push normalmente.
+
 ## Limitações
 
 - a API não possui autenticação ou autorização e deve ficar em ambiente privado;

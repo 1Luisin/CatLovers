@@ -13,12 +13,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PLANS_MONTH_KEY, PLANS_MONTH_LABEL } from "../../data/constants";
-import { tabs } from "../../data/uiConstants";
+import { webTabs } from "../../data/uiConstants";
 import { useMonthlyGoals } from "../../features/goals/hooks/useMonthlyGoals";
 import { MonthlyGoalModal } from "../../features/goals/components/MonthlyGoalModal.web";
 import { HomeScreen } from "../../features/home/screens/HomeScreen.web";
 import { AddModal } from "../../components/forms/AddModal.web";
 import { CollectionScreen } from "../../features/memories/screens/CollectionScreen.web";
+import { MobileDownloadsScreen } from "../../features/downloads/screens/MobileDownloadsScreen.web";
 import { useCoupleItems } from "../../features/memories/hooks/useCoupleItems";
 import { useWebNotifications } from "../../features/notifications/hooks/useWebNotifications";
 import { PlansScreen } from "../../features/plans/screens/PlansScreen.web";
@@ -159,8 +160,8 @@ export default function App() {
   const navigateToTab = useCallback(
     (nextTab: Tab) => {
       if (nextTab === tab) return;
-      const currentIndex = tabs.findIndex((item) => item.key === tab);
-      const nextIndex = tabs.findIndex((item) => item.key === nextTab);
+      const currentIndex = webTabs.findIndex((item) => item.key === tab);
+      const nextIndex = webTabs.findIndex((item) => item.key === nextTab);
       transitionDirection.current = nextIndex > currentIndex ? 1 : -1;
       setTab(nextTab);
     },
@@ -212,6 +213,8 @@ export default function App() {
           onToggle={togglePlan}
         />
       );
+    if (tab === "downloads")
+      return <MobileDownloadsScreen theme={activeTheme} />;
     if (tab === "perfil")
       return (
         <ProfileScreen
@@ -389,7 +392,7 @@ export default function App() {
             </Pressable>
 
             <View style={styles.desktopNavigation}>
-              {tabs.map((item) => {
+              {webTabs.map((item) => {
                 const active = tab === item.key;
                 return (
                   <Pressable
@@ -481,7 +484,7 @@ export default function App() {
               },
             ]}
           >
-            {tabs.map((item) => {
+            {webTabs.map((item) => {
               const active = tab === item.key;
               return (
                 <Pressable

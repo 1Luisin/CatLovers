@@ -12,6 +12,7 @@
     "export:android": "expo export --platform android",
     "export:ios": "expo export --platform ios",
     "typecheck": "tsc --noEmit",
+    "downloads:sync": "node scripts/sync-mobile-downloads.mjs",
     "backend:dev": "npm --prefix backend run dev",
     "backend:typecheck": "npm --prefix backend run typecheck",
     "backend:seed": "npm --prefix backend run seed"
